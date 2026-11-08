@@ -1,0 +1,10 @@
+# Values digitized by eye from Soni & Kumar (2024), Fig. 4A-C (bar charts). Approximate (+/- ~3% of axis range).
+# Used only to compare the trend/ratio of our reproduction with the paper; not ground truth.
+jobs,makespan_classical_ms,makespan_proposed_ms,energy_classical_J,energy_proposed_J,cost_classical_usd,cost_proposed_usd
+20,110,80,80,50,25,19
+40,300,210,200,180,45,32
+60,520,420,340,330,60,45
+80,710,630,480,450,63,46
+100,880,800,580,560,96,84
+200,1800,1720,1240,1170,181,160
+300,2750,2670,1910,1870,247,228
