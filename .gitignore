@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Virtual environment
+.venv/
+venv/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Copyrighted source documents (cite via DOI, do not redistribute)
+Concurrency and Computation*.pdf
+Bulanik_Mantik_Donem_Projesi_Yonergesi.pdf
+references/*.pdf
+
+# Secrets
+.env
+*.key
