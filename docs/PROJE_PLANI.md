@@ -4,7 +4,7 @@
 *Concurrency and Computation: Practice and Experience*, vol. 36, no. 20, e8198, 2024. doi:10.1002/cpe.8198
 
 **Hedef bitiş:** 15 Kasım 2026 (resmi teslim: 16 Kasım 2026)
-**Commit kuralı:** Commitleri öğrenci atar. Her adım sonunda önerilen commit mesajı verilir.
+**Commit kuralı:** Öğrencinin talimatıyla commitleri Claude, öğrencinin git kimliğiyle atar (ortak yazar satırı eklenmez). 1. ve 2. gün 8 Kasım'da yapıldı; kalan günler 9 Kasım'dan itibaren.
 
 ---
 
@@ -72,15 +72,16 @@ FogWorkflowSim Java tabanlı ve makalenin tam kurulumu paylaşılmadığı için
 
 | Gün | Tarih | İş | Checkpoint | Önerilen commit(ler) |
 |---|---|---|---|---|
-| 1 | 8 Kas (Paz) | Yönerge + makale analizi, plan, repo iskeleti | CP1 | `Initial project structure`, `Add paper analysis notes` |
-| 2 | 9 Kas (Pzt) | Bulanık motor (MF, kurallar, Mamdani, COG) + testler | CP2 | `Implement fuzzy inference engine`, `Add membership function plots` |
-| 3 | 10 Kas (Sal) | Ortam modeli, workflow üretici, MIN-MIN, baseline politika | CP3 | `Add fog/cloud/edge environment model`, `Add baseline two-way offloading` |
-| 4 | 11 Kas (Çar) | Önerilen bulanık politika, Şekil 4 + Tablo 4 yeniden üretimi | CP3 | `Add fuzzy offloading policy`, `Reproduce Fig.4 and Table 4` |
-| 5 | 12 Kas (Per) | Özgün katkı: Type-2 FIS + gürültü deneyleri | CP4–5 | `Add interval type-2 FIS`, `Add robustness experiments` |
-| 6 | 13 Kas (Cum) | Ablation (Sugeno/durulaştırma), tablolar/grafikler, literatür taraması | CP5 | `Add ablation study`, `Add result tables and figures` |
-| 7 | 14 Kas (Cmt) | Teknik rapor (8–12 sayfa, IEEE), README | — | `Add technical report draft`, `Write README` |
-| 8 | 15 Kas (Paz) | Sunum (15–20 dk), canlı demo, son kontroller, PDF'ler | FINAL | `Add presentation`, `Final report and cleanup` |
-| — | 16 Kas | Classroom'a yükleme (tampon gün) | — | — |
+| 1 | 8 Kas (Paz) | Yönerge + makale analizi, plan, repo iskeleti | CP1 | `Initial project structure`, `Add paper analysis and project plan` |
+| 2 | 8 Kas (Paz) | Bulanık motor (MF, kurallar, Mamdani, COG) + testler | CP2 | `Implement fuzzy inference engine and paper FIS`, `Add membership function plots, FIS analysis and daily logs` |
+| 3 | 9 Kas (Pzt) | Ortam modeli, workflow üretici, MIN-MIN, baseline politika | CP3 | `Add fog/cloud/edge environment model`, `Add baseline two-way offloading` |
+| 4 | 10 Kas (Sal) | Önerilen bulanık politika, Şekil 4 + Tablo 4 yeniden üretimi | CP3 | `Add fuzzy offloading policy`, `Reproduce Fig.4 and Table 4` |
+| 5 | 11 Kas (Çar) | Özgün katkı: Type-2 FIS + gürültü deneyleri | CP4–5 | `Add interval type-2 FIS`, `Add robustness experiments` |
+| 6 | 12 Kas (Per) | Ablation (Sugeno/durulaştırma), tablolar/grafikler, literatür taraması | CP5 | `Add ablation study`, `Add result tables and figures` |
+| 7 | 13 Kas (Cum) | Teknik rapor (8–12 sayfa, IEEE), README | — | `Add technical report draft`, `Write README` |
+| 8 | 14 Kas (Cmt) | Sunum (15–20 dk), canlı demo | FINAL | `Add presentation` |
+| — | 15 Kas (Paz) | Son kontroller, PDF'ler, temiz klondan tekrar üretilebilirlik testi | — | `Final report and cleanup` |
+| — | 16 Kas | Classroom'a yükleme (resmi teslim) | — | — |
 
 ---
 
