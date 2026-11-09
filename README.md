@@ -27,7 +27,7 @@ The reference paper uses a Mamdani fuzzy inference system to make this offloadin
 
 ## Repository Structure
 ```
-src/            fuzzy engine, environment model, workflow generator, scheduler, policies
+src/            fuzzy/ engine, env/ nodes, workflow/ generator, scheduler/ MIN-MIN, policies/
 data/           generated workflows and random seeds
 experiments/    baseline/ and proposed/ experiment scripts
 results/        figures/ and tables/
@@ -79,12 +79,40 @@ python -m src.fuzzy.paper_fis --jl 10 --vt 50 --nl 25 --bw 3 --dl 8
 # membership-function figure, control surfaces, decision statistics
 python -m experiments.fis_analysis
 
+# baseline experiment: 20-300 jobs x 10 seeds x 5 policies
+python -m experiments.baseline.run_baseline
+
 # unit tests (includes a cross-check against scikit-fuzzy)
 python -m pytest
 ```
 
+## Simulator
+FogWorkflowSim (Java) is replaced by a small Python simulator so that the paper's method and the
+baseline run on **identical** workflows, nodes and network.
+
+| Module | Content |
+|---|---|
+| [`src/env`](src/env) | Edge / fog / cloud nodes with the paper's Table 3 parameters (2 nodes per layer by default), network transfer model |
+| [`src/workflow`](src/workflow) | Seeded MONTAGE-like DAG generator with exactly *N* tasks (Montage_25 = 5 mProjectPP + 9 mDiffFit, as in Pegasus) |
+| [`src/scheduler`](src/scheduler) | MIN-MIN list scheduling; the offloading policy picks the layer when a task becomes ready, MIN-MIN picks the node. Metrics: makespan (Eq. 12), energy (busy + idle power), cost (execution + communication), deadline miss rate |
+| [`src/policies`](src/policies) | Baseline two-way fog-cloud offloading (Khan et al. 2023), single-layer and all-layer MIN-MIN reference policies |
+
+Assumptions the paper leaves open (units, pricing, latency per layer) are documented in
+[`src/env/nodes.py`](src/env/nodes.py).
+
 ## Reproduction Experiments
-_To be added._
+**Baseline** (classical two-way fog-cloud offloading), mean of 10 seeds — full table in
+[`results/tables/baseline_summary.csv`](results/tables/baseline_summary.csv):
+
+| Jobs | Makespan (s) | Energy (J) | Cost ($) | Cloud share |
+|---|---|---|---|---|
+| 20 | 174 | 650 | 120 | 8.5 % |
+| 100 | 317 | 1353 | 609 | 49.7 % |
+| 300 | 717 | 3283 | 1792 | 53.6 % |
+
+![Baseline metrics](results/figures/baseline_metrics.png)
+
+The fuzzy policy of the paper is evaluated against this baseline in the next step (work in progress).
 
 ## Proposed Extension
 _To be added._
