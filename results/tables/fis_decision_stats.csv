@@ -1,4 +1,4 @@
 layer,share_percent,samples,mean_ms_per_decision
-Edge,17.1,2000,0.319
-Fog,81.75,2000,0.319
-Cloud,1.15,2000,0.319
+Edge,17.1,2000,0.045
+Fog,81.75,2000,0.045
+Cloud,1.15,2000,0.045

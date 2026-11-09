@@ -37,8 +37,8 @@ def test_extreme_scenarios(values, layer):
     assert crisp_to_layer(build_fis().compute(values)) == layer
 
 
-def _skfuzzy_system():
-    """Same FIS built with scikit-fuzzy (min AND, max aggregation, centroid)."""
+def _skfuzzy_system(method="centroid"):
+    """Same FIS built with scikit-fuzzy (min AND, max aggregation, given defuzzification)."""
     ants = {}
     for v in INPUTS:
         a = ctrl.Antecedent(v.universe(1001), v.name)
@@ -46,7 +46,7 @@ def _skfuzzy_system():
             fn = fuzz.trimf if mf.kind == "tri" else fuzz.trapmf
             a[t] = fn(a.universe, list(mf.params))
         ants[v.name] = a
-    out = ctrl.Consequent(DECISION.universe(1001), "decision", defuzzify_method="centroid")
+    out = ctrl.Consequent(DECISION.universe(1001), "decision", defuzzify_method=method)
     for t, mf in DECISION.terms.items():
         out[t] = fuzz.trimf(out.universe, list(mf.params))
     rules = []
@@ -58,12 +58,37 @@ def _skfuzzy_system():
     return ctrl.ControlSystemSimulation(ctrl.ControlSystem(rules))
 
 
-def test_matches_scikit_fuzzy():
-    ours, ref = build_fis(), _skfuzzy_system()
+@pytest.mark.parametrize("method,n", [
+    ("centroid", 40), ("bisector", 10), ("mom", 10), ("som", 10), ("lom", 10)])
+def test_matches_scikit_fuzzy(method, n):
+    ours, ref = build_fis(method), _skfuzzy_system(method)
     rng = np.random.default_rng(0)
-    for _ in range(40):
+    for _ in range(n):
         vals = {v.name: rng.uniform(v.lo, v.hi) for v in INPUTS}
         for k, x in vals.items():
             ref.input[k] = x
         ref.compute()
         assert ours.compute(vals) == pytest.approx(ref.output["decision"], abs=0.5)
+
+
+def test_nan_input_and_output_are_rejected():
+    fis = build_fis()
+    with pytest.raises(ValueError):
+        fis.compute({"jl": float("nan"), "vt": 50, "nl": 10, "bw": 5, "dl": 20})
+    with pytest.raises(ValueError):
+        crisp_to_layer(float("nan"))
+
+
+def test_rules_are_hashable_and_fis_comparable():
+    rules = build_rules()
+    assert len(set(rules)) == 243
+    fis = build_fis()
+    assert fis == fis and fis != build_fis()  # identity comparison, no numpy ambiguity
+
+
+def test_vectorized_firing_matches_naive_min():
+    fis = build_fis()
+    vals = {"jl": 13, "vt": 70, "nl": 6, "bw": 7, "dl": 18}
+    res = fis.infer(vals)
+    naive = [min(res.memberships[v][t] for v, t in r.antecedent.items()) for r in fis.rules]
+    assert np.allclose(res.firing, naive)

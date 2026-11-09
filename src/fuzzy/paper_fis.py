@@ -84,6 +84,8 @@ def build_fis(defuzz: str = "centroid", resolution: int = 1001) -> MamdaniFIS:
 
 
 def crisp_to_layer(c: float) -> str:
+    if c != c:  # NaN: no rule fired, there is no decision to map
+        raise ValueError("no rule fired (crisp output is NaN)")
     if c < EDGE_FOG_THRESHOLD:
         return "Edge"
     if c > FOG_CLOUD_THRESHOLD:

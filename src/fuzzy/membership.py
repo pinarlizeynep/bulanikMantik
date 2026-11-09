@@ -6,6 +6,7 @@ e.g. ``trap(0, 0, 8, 16)`` is 1 on [0, 8] and falls linearly to 0 at 16.
 """
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -49,12 +50,33 @@ class MF:
     kind: str
     params: tuple[float, ...]
 
+    def __post_init__(self):
+        if self.kind not in ("tri", "trap"):
+            raise ValueError(f"unknown MF kind: {self.kind}")
+
     def __call__(self, x):
+        """Vectorized evaluation over an array (used for plots and the output universe)."""
+        return trimf(x, *self.params) if self.kind == "tri" else trapmf(x, *self.params)
+
+    def degree(self, x: float) -> float:
+        """Scalar evaluation without numpy allocation (hot path of fuzzification)."""
         if self.kind == "tri":
-            return trimf(x, *self.params)
-        if self.kind == "trap":
-            return trapmf(x, *self.params)
-        raise ValueError(f"unknown MF kind: {self.kind}")
+            a, b, c = self.params
+            if x == b:
+                return 1.0
+            if a < x < b:
+                return (x - a) / (b - a)
+            if b < x < c:
+                return (c - x) / (c - b)
+            return 0.0
+        a, b, c, d = self.params
+        if b <= x <= c:
+            return 1.0
+        if a < x < b:
+            return (x - a) / (b - a)
+        if c < x < d:
+            return (d - x) / (d - c)
+        return 0.0
 
 
 def tri(a, b, c) -> MF:
@@ -75,12 +97,15 @@ class LinguisticVariable:
     terms: dict[str, MF] = field(default_factory=dict)
 
     def clip(self, x: float) -> float:
-        return float(min(max(x, self.lo), self.hi))
+        x = float(x)
+        if not math.isfinite(x):
+            raise ValueError(f"{self.name}: input must be a finite number, got {x}")
+        return min(max(x, self.lo), self.hi)
 
     def fuzzify(self, x: float) -> dict[str, float]:
         """Crisp value -> membership degree of every term (inputs are clipped to the universe)."""
         x = self.clip(x)
-        return {term: float(mf(np.array([x]))[0]) for term, mf in self.terms.items()}
+        return {term: mf.degree(x) for term, mf in self.terms.items()}
 
     def universe(self, n: int = 1001) -> np.ndarray:
         return np.linspace(self.lo, self.hi, n)

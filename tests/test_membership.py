@@ -33,3 +33,9 @@ def test_defuzzify_som_lom_on_plateau():
     mu = np.minimum(0.5, trimf(x, 0, 50, 100))  # plateau 0.5 on [25, 75]
     assert defuzzify(x, mu, "som") == pytest.approx(25, abs=0.2)
     assert defuzzify(x, mu, "lom") == pytest.approx(75, abs=0.2)
+
+
+def test_scalar_degree_matches_vectorized():
+    xs = np.linspace(-5, 55, 241)
+    for mf in (tri(10, 30, 50), trap(0, 0, 10, 20), trap(40, 48, 50, 50), tri(0, 0, 20)):
+        assert np.allclose([mf.degree(x) for x in xs], mf(xs))

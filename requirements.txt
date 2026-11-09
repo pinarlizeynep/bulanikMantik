@@ -1,3 +1,4 @@
+# Direct dependencies
 numpy==2.2.6
 scipy==1.15.3
 pandas==2.2.3
@@ -5,3 +6,19 @@ matplotlib==3.10.3
 networkx==3.4.2
 scikit-fuzzy==0.5.0
 pytest==8.3.5
+
+# Transitive dependencies, pinned for a reproducible environment (pip freeze, Python 3.12)
+# pyparsing is held at 3.2.x: 3.3 emits DeprecationWarnings from matplotlib's mathtext parser.
+colorama==0.4.6
+contourpy==1.4.0
+cycler==0.12.1
+fonttools==4.68.0
+iniconfig==2.3.1
+kiwisolver==1.5.1
+packaging==26.3
+pillow==13.0.0
+pluggy==1.7.0
+pyparsing==3.2.3
+python-dateutil==4.0.0
+pytz==2026.6
+tzdata==2026.6
