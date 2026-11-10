@@ -93,3 +93,25 @@ def test_baseline_never_uses_edge_and_uses_cloud_under_load():
 
 def test_edge_only_is_free():
     assert simulate(montage(40), default_environment(), SingleLayerPolicy("Edge")).cost == 0
+
+
+def test_idle_power_only_for_used_nodes_by_default():
+    wf, env = montage(40, seed=0), default_environment()
+    used = simulate(wf, env, SingleLayerPolicy("Edge"))
+    everything = simulate(wf, env, SingleLayerPolicy("Edge"), idle="all")
+    assert used.makespan == everything.makespan
+    assert used.energy_j < everything.energy_j  # unused fog/cloud nodes are not powered
+    with pytest.raises(ValueError):
+        simulate(wf, env, SingleLayerPolicy("Edge"), idle="nope")
+
+
+def test_energy_ranking_follows_table3_power_per_mips():
+    """mW per MIPS: fog 0.615 < edge 0.700 < cloud 1.000 -> the busy-energy ranking of the layers."""
+    wf, env = montage(100, seed=0), default_environment()
+    e = {layer: simulate(wf, env, SingleLayerPolicy(layer)).energy_j for layer in ("Edge", "Fog", "Cloud")}
+    assert e["Fog"] < e["Edge"] < e["Cloud"]
+
+
+def test_offloading_time_is_recorded():
+    res = simulate(montage(20, seed=0), default_environment(), SingleLayerPolicy("Cloud"))
+    assert res.mean_offload_s > 0
