@@ -60,6 +60,7 @@ class SchedulingContext:
     n_ready: int  # tasks waiting in the ready list, including this one (job list size)
     pending_mi: dict[str, float]  # work already sent to each layer but not yet scheduled
     drt: dict[tuple[int, str], float] = field(repr=False, default_factory=dict)
+    node_of: dict[int, Node] = field(repr=False, default_factory=dict)  # node of every placed task
 
     def eft(self, task_id: int, node: Node) -> float:
         start = max(self.node_free[node.name], self.drt[(task_id, node.name)])
@@ -78,13 +79,16 @@ class SchedulingContext:
         ``best_eft`` alone is optimistic: tasks that were already sent to the layer but are still
         waiting in the ready list do not occupy any node yet.
         """
+        return self.best_eft(task_id, layer) + self.pending_s(layer)
+
+    def pending_s(self, layer: str) -> float:
+        """Work already sent to ``layer`` but not yet on a node, in seconds of the layer's total MIPS."""
         capacity = sum(n.spec.mips for n in self.env.by_layer[layer])
-        return self.best_eft(task_id, layer) + max(0.0, self.pending_mi[layer]) / capacity
+        return max(0.0, self.pending_mi[layer]) / capacity
 
     def load(self, layer: str) -> float:
         """Seconds of work ahead of a new task on ``layer``: node queues plus work still waiting."""
-        capacity = sum(n.spec.mips for n in self.env.by_layer[layer])
-        return self.backlog(layer) + max(0.0, self.pending_mi[layer]) / capacity
+        return self.backlog(layer) + self.pending_s(layer)
 
     def backlog(self, layer: str) -> float:
         """Mean queued work (s) of a layer's nodes beyond ``now``."""
@@ -125,6 +129,7 @@ def simulate(workflow: Workflow, env: Environment, policy: Policy, idle: str = "
     pending_mi = {layer: 0.0 for layer in LAYERS}
     drt: dict[tuple[int, str], float] = {}
     received: dict[tuple[int, str], float] = {}
+    node_of: dict[int, Node] = {}
 
     def make_ready(tid: int) -> None:
         task = workflow.tasks[tid]
@@ -141,7 +146,7 @@ def simulate(workflow: Workflow, env: Environment, policy: Policy, idle: str = "
             else:
                 drt[(tid, node.name)] = env.upload_time(node, task.input_mb)
                 received[(tid, node.name)] = task.input_mb
-        ctx = SchedulingContext(workflow, env, t_ready, node_free, len(ready) + 1, pending_mi, drt)
+        ctx = SchedulingContext(workflow, env, t_ready, node_free, len(ready) + 1, pending_mi, drt, node_of)
         layers = tuple(policy.allowed_layers(tid, ctx))
         allowed = tuple(n for layer in layers for n in env.by_layer[layer])
         if not allowed:
@@ -168,6 +173,7 @@ def simulate(workflow: Workflow, env: Environment, policy: Policy, idle: str = "
             pending_mi[layer] -= workflow.tasks[tid].length_mi / len(layers)
         placed[tid] = Assignment(tid, node.name, node.layer, t_ready, start, eft,
                                  received[(tid, node.name)], max(0.0, drt[(tid, node.name)] - t_ready))
+        node_of[tid] = node
         node_free[node.name] = eft
         node_busy[node.name] += eft - start
         for child in workflow.children(tid):

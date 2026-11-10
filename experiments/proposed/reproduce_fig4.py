@@ -46,7 +46,7 @@ def run(seeds=SEEDS) -> pd.DataFrame:
     for jobs in JOB_COUNTS:
         for seed in seeds:
             wf = montage(jobs, seed=seed)  # both policies see the identical workflow
-            for pol in (TwoWayFogCloudPolicy(), FuzzyOffloadingPolicy()):
+            for pol in (TwoWayFogCloudPolicy(), FuzzyOffloadingPolicy(record=False)):
                 rows.append({**simulate(wf, env, pol).summary(), "seed": seed})
     return pd.DataFrame(rows)
 

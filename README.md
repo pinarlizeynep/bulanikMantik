@@ -122,9 +122,9 @@ preference, paired runs on identical workflows; positive = proposed is better):
 
 | Metric | Improvement, mean ± std | Runs where proposed wins | Paper (reported) |
 |---|---|---|---|
-| Makespan | +4.1 ± 4.2 % | 79 % | 7.51 % |
+| Makespan | +4.0 ± 4.2 % | 79 % | 7.51 % |
 | Energy | −4.2 ± 9.0 % (worse) | 10 % | 4.63 % |
-| Cost | +22.0 ± 3.1 % | 100 % | 13.60 % |
+| Cost | +21.9 ± 3.1 % | 100 % | 13.60 % |
 
 ![Fig. 4 reproduction](results/figures/fig4_reproduction.png)
 

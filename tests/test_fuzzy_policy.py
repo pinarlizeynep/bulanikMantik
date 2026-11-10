@@ -9,6 +9,8 @@ from src.policies import FuzzyOffloadingPolicy, TwoWayFogCloudPolicy
 from src.scheduler import simulate
 from src.workflow import montage
 
+BALANCED_PREF = (1 / 3, 1 / 3, 1 / 3)
+
 
 # ------------------------------------------------------------------ Table 2 / Algorithm 1
 @pytest.mark.parametrize("pref,algo", [
@@ -105,6 +107,54 @@ def test_physical_mapping_swaps_cost_and_time_targets():
     assert PHYSICAL_LAYER == {"A2": "Edge", "A3": "Fog", "A4": "Cloud"}
     pol = FuzzyOffloadingPolicy(preference=(0, 0, 1), verify_deadline=False, layer_map=PHYSICAL_LAYER)
     assert simulate(montage(40, seed=0), default_environment(), pol).layer_share["Edge"] == 1.0
+
+
+def test_qos_shift_follows_the_layer_mapping():
+    from src.fuzzy.qos_selector import PHYSICAL_LAYER
+    pref = (0.2, 0.3, 0.5)  # cost-leaning, still A5
+    paper = FuzzyOffloadingPolicy(preference=pref)
+    physical = FuzzyOffloadingPolicy(preference=pref, layer_map=PHYSICAL_LAYER)
+    assert paper.algorithm == physical.algorithm == "A5"
+    assert paper.crisp_shift > 0 > physical.crisp_shift  # cost -> cloud (paper) / edge (physical)
+    assert paper.crisp_shift == pytest.approx(-physical.crisp_shift)
+    assert FuzzyOffloadingPolicy().crisp_shift == pytest.approx(0.0)
+
+
+def test_invalid_layer_map_is_rejected():
+    with pytest.raises(ValueError):
+        FuzzyOffloadingPolicy(layer_map={"A2": "Moon", "A3": "Fog", "A4": "Edge"})
+
+
+@pytest.mark.parametrize("counts", [(2, 2, 0), (0, 0, 2), (0, 2, 0)])
+def test_policy_runs_in_partial_environments(counts):
+    env = default_environment(*counts)
+    present = set(env.layers_present())
+    for pref in (BALANCED_PREF, (0, 0, 1), (0, 1, 0)):
+        pol = FuzzyOffloadingPolicy(preference=pref)
+        res = simulate(montage(40, seed=0), env, pol)
+        assert {layer for layer, s in res.layer_share.items() if s > 0} <= present
+        for d in pol.decisions:
+            for v in INPUTS:
+                if d.inputs:
+                    assert v.lo <= d.inputs[v.name] <= v.hi
+
+
+def test_bandwidth_uses_the_bottleneck_link_of_the_transfer():
+    """Entry tasks: cloud uplink 300 -> 7.5; data from edge/fog: min(up, cloud down 500) -> 12.5;
+    all inputs already on the cloud node -> no link needed -> 20."""
+    pol = FuzzyOffloadingPolicy()
+    simulate(montage(100, seed=0), default_environment(), pol)
+    assert {d.inputs["bw"] for d in pol.decisions} <= {7.5, 12.5, 20.0}
+    assert 7.5 in {d.inputs["bw"] for d in pol.decisions}
+
+
+def test_fixed_algorithms_do_not_observe_inputs():
+    pol = FuzzyOffloadingPolicy(preference=(0, 1, 0))
+    simulate(montage(20, seed=0), default_environment(), pol)
+    assert all(d.inputs == {} for d in pol.decisions)
+    off = FuzzyOffloadingPolicy(record=False)
+    simulate(montage(20, seed=0), default_environment(), off)
+    assert off.decisions == []
 
 
 def test_extreme_preferences_reflect_table3_trade_offs():

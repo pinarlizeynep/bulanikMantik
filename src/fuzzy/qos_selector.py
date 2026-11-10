@@ -4,10 +4,13 @@ The paper (Sec. 2.2, Table 2, Algorithm 1) lets the user give a preference degre
 time (T), energy (E) and cost (C).  Each degree is fuzzified into Low / Medium / High and 16 rules
 select one of four algorithms:
 
-    A2  cost-only        -> every job goes to the cloud
-    A3  energy-only      -> every job goes to the fog
-    A4  time-only        -> every job goes to the edge
+    A2  cost-only        -> target layer: cloud
+    A3  energy-only      -> target layer: fog
+    A4  time-only        -> target layer: edge (local execution)
     A5  hybrid           -> the 5-input FIS of ``paper_fis`` decides per job
+
+The target layer is where the policy sends a job; the deadline check of
+``FuzzyOffloadingPolicy`` (Alg. 5, "dl not met") can still move single jobs of A2 / A3 elsewhere.
 
 The paper writes the sets as L = (0, 0.5], M = [0.2, 0.8], H = [0.5, 1] without giving shapes;
 we use a left shoulder, a triangle and a right shoulder with exactly those supports.

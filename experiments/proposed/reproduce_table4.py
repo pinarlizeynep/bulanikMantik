@@ -50,17 +50,16 @@ def preference(kind: str, s: float) -> tuple[float, float, float]:
 
 def run() -> pd.DataFrame:
     env, rows = default_environment(), []
-    for mapping, layer_map in MAPPINGS.items():
-      for kind in AXES:
-        for s in S_VALUES:
-            pref = preference(kind, s)
-            for seed in SEEDS:
-                pol = FuzzyOffloadingPolicy(preference=pref, layer_map=layer_map)
-                res = simulate(montage(JOBS, seed=seed), env, pol)
-                rows.append({"mapping": mapping, "optimization": kind, "s": s, "algorithm": pol.algorithm, "seed": seed,
-                             "cloud_pct": 100 * res.layer_share["Cloud"], "fog_pct": 100 * res.layer_share["Fog"],
-                             "edge_pct": 100 * res.layer_share["Edge"], "makespan_s": res.makespan,
-                             "energy_J": res.energy_j, "cost_usd": res.cost, "offload_s": res.mean_offload_s})
+    grid = [(m, lm, k, s) for m, lm in MAPPINGS.items() for k in AXES for s in S_VALUES]
+    for mapping, layer_map, kind, s in grid:
+        pref = preference(kind, s)
+        for seed in SEEDS:
+            pol = FuzzyOffloadingPolicy(preference=pref, layer_map=layer_map, record=False)
+            res = simulate(montage(JOBS, seed=seed), env, pol)
+            rows.append({"mapping": mapping, "optimization": kind, "s": s, "algorithm": pol.algorithm, "seed": seed,
+                         "cloud_pct": 100 * res.layer_share["Cloud"], "fog_pct": 100 * res.layer_share["Fog"],
+                         "edge_pct": 100 * res.layer_share["Edge"], "makespan_s": res.makespan,
+                         "energy_J": res.energy_j, "cost_usd": res.cost, "offload_s": res.mean_offload_s})
     return pd.DataFrame(rows)
 
 
