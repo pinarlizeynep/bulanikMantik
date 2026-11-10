@@ -1,0 +1,17 @@
+# Soni & Kumar (2024), Table 4 "Offloading job distribution", transcribed from the paper's text layer.
+# Shares in percent; makespan in ms, energy in J, cost in $, offloading time in ms (units as printed).
+# NB: the printed cost falls while the cloud share rises (row group "Cost"), which contradicts Table 3
+# (cloud is the most expensive layer); see docs/makale_analizi.md, critique item 5.
+optimization,cloud_pct,fog_pct,edge_pct,makespan_ms,energy_J,cost_usd,offload_ms
+cost,20,40,40,1376,76,1361,30
+cost,40,40,20,1242,201,1235,13
+cost,60,20,20,1391,339,1100,7
+cost,80,20,0,844,437,249,16
+cost,100,0,0,854,452,181,12
+time,40,20,40,1235,207,1239,7
+time,20,60,20,1371,73,1367,11
+time,20,80,0,669,67,679,11
+time,0,100,0,765,61,722,12
+energy,20,20,60,1379,55,1372,13
+energy,20,0,80,1373,53,1365,5
+energy,0,0,100,1468,44,1409,3

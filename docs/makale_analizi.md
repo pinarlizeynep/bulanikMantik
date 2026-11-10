@@ -118,8 +118,10 @@ Ayrıca: Cloudlet length=400000, fileSize=outputSize=300. VM: mips=1000, ram=512
 3. **Baseline adilliği şüpheli:** Baseline sonuçları başka bir çalışmadan ve başka bir simülatörden (SFogSim) alınmış gibi görünüyor; aynı ortamda yeniden koşulduğu açık değil.
 4. **İstatistik eksik:** Tekrar sayısı, standart sapma ve anlamlılık testi raporlanmamış ("several consecutive iterations").
 5. **Sezgiye aykırı eşleşmeler:** Tablo 2'de maliyet önceliği → Cloud (Alg. 2). Oysa Tablo 3'e göre Cloud en pahalı katman. Tablo 4'teki "Cost" satırlarında da Cloud oranı arttıkça maliyet düşüyor; bu, Tablo 3'teki birim fiyatlarla çelişiyor.
+   - **Yeniden üretimle doğrulandı (4. gün):** Algoritma 2–4'ün katman etiketleri (maliyet→Cloud, zaman→Edge) Tablo 3 ile çelişiyor. Etiketler uygulandığında maliyet tercihi maliyeti artırıyor (459 → 565 $), zaman tercihi makespan'ı 2.3 kat kötüleştiriyor (300 → 698 s). Ayrıca Algoritma 3–4 "enerji→Fog, zaman→Edge" derken Tablo 4 enerji için Edge, zaman için Fog payını artırıyor. Ayrıntı: `docs/gunluk/gun4_2026-11-10.md`.
 6. **Küçük tutarsızlıklar:**
-   - Şekil 4E'deki çubuklar (~7.2 / ~4.4 / ~13.3) metindeki yüzdelerle tam örtüşmüyor.
+   - Şekil 4E'deki çubuklar (~7.2 / ~4.4 / ~13.3) metindeki yüzdelerle tam örtüşmüyor. Şekil 4A–C çubuklarından hesaplanan ortalama iyileşme ise %14.9 / %9.7 / %19.5 çıkıyor (4. gün).
+   - Enerjinin nasıl toplandığı (boşta güç dahil mi, hangi düğümler) belirtilmemiş; bu seçim enerji sonucunu işaret değiştirecek kadar etkiliyor (4. gün).
    - Denklem numarası atıfları kaymış: metin (19)–(20) yerine (17)–(18) diyor.
    - Alg. 4 "FogDeviceList" üzerinde Edge düğümü arıyor.
 7. **Belirsizliğin modellenmesi:** Motivasyon "belirsizlik" olduğu halde Type-1 MF kullanılmış. Ölçüm gürültüsüne karşı dayanıklılık test edilmemiş. **Bu boşluk özgün katkımızın gerekçesidir.**

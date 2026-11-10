@@ -82,6 +82,10 @@ python -m experiments.fis_analysis
 # baseline experiment: 20-300 jobs x 10 seeds x 5 policies
 python -m experiments.baseline.run_baseline
 
+# reproduction of the paper's Fig. 4 (proposed vs. classical) and Table 4 (QoS preferences)
+python -m experiments.proposed.reproduce_fig4
+python -m experiments.proposed.reproduce_table4
+
 # unit tests (includes a cross-check against scikit-fuzzy)
 python -m pytest
 ```
@@ -95,10 +99,11 @@ baseline run on **identical** workflows, nodes and network.
 | [`src/env`](src/env) | Edge / fog / cloud nodes with the paper's Table 3 parameters (2 nodes per layer by default), network transfer model |
 | [`src/workflow`](src/workflow) | Seeded MONTAGE-like DAG generator with exactly *N* tasks (Montage_25 = 5 mProjectPP + 9 mDiffFit, as in Pegasus) |
 | [`src/scheduler`](src/scheduler) | MIN-MIN list scheduling; the offloading policy picks the layer when a task becomes ready, MIN-MIN picks the node. Metrics: makespan (Eq. 12), energy (busy + idle power), cost (execution + communication), deadline miss rate |
-| [`src/policies`](src/policies) | Baseline two-way fog-cloud offloading (Khan et al. 2023), single-layer and all-layer MIN-MIN reference policies |
+| [`src/policies`](src/policies) | Proposed fuzzy offloading (Algorithms 1-5), baseline two-way fog-cloud offloading (Khan et al. 2023), single-layer and all-layer MIN-MIN reference policies |
 
 Assumptions the paper leaves open (units, pricing, latency per layer) are documented in
-[`src/env/nodes.py`](src/env/nodes.py).
+[`src/env/nodes.py`](src/env/nodes.py). Energy counts idle power only for nodes that executed at
+least one task (`simulate(..., idle="used")`; `idle="all"` keeps every node powered on).
 
 ## Reproduction Experiments
 **Baseline** (classical two-way fog-cloud offloading), mean of 10 seeds — full table in
@@ -106,13 +111,34 @@ Assumptions the paper leaves open (units, pricing, latency per layer) are docume
 
 | Jobs | Makespan (s) | Energy (J) | Cost ($) | Cloud share |
 |---|---|---|---|---|
-| 20 | 174 | 650 | 120 | 8.5 % |
-| 100 | 317 | 1353 | 609 | 49.7 % |
-| 300 | 717 | 3283 | 1792 | 53.6 % |
+| 20 | 174 | 412 | 120 | 8.5 % |
+| 100 | 317 | 1334 | 609 | 49.7 % |
+| 300 | 717 | 3240 | 1792 | 53.6 % |
 
 ![Baseline metrics](results/figures/baseline_metrics.png)
 
-The fuzzy policy of the paper is evaluated against this baseline in the next step (work in progress).
+**Proposed fuzzy offloading vs. baseline** (Fig. 4 reproduction, 7 job counts x 10 seeds, balanced QoS
+preference, paired runs on identical workflows; positive = proposed is better):
+
+| Metric | Improvement, mean ± std | Runs where proposed wins | Paper (reported) |
+|---|---|---|---|
+| Makespan | +4.1 ± 4.2 % | 79 % | 7.51 % |
+| Energy | −4.2 ± 9.0 % (worse) | 10 % | 4.63 % |
+| Cost | +22.0 ± 3.1 % | 100 % | 13.60 % |
+
+![Fig. 4 reproduction](results/figures/fig4_reproduction.png)
+
+The makespan and cost gains are reproduced in direction; the energy gain is **not** (details and
+the reason in [`docs/gunluk/gun4_2026-11-10.md`](docs/gunluk/gun4_2026-11-10.md)).
+
+**QoS preferences (Table 4 reproduction).** With the published layer mapping (cost→cloud, energy→fog,
+time→edge) the trends of the paper's Table 4 are not reproduced: edge-only execution is the *cheapest
+and most frugal* but slowest, a cloud-heavy mix is the *fastest* but most expensive — the opposite of
+the paper's labels, because the paper's own Table 3 makes the cloud fast but expensive and the edge
+free but slow. A sensitivity run with the physically consistent mapping is in
+[`results/figures/table4_physical_mapping.png`](results/figures/table4_physical_mapping.png).
+
+![Table 4 reproduction](results/figures/table4_reproduction.png)
 
 ## Proposed Extension
 _To be added._
