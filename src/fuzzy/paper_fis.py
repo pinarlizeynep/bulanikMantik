@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import itertools
 
+from .it2 import IT2MamdaniFIS
 from .mamdani import MamdaniFIS, Rule
 from .membership import LinguisticVariable, trap, tri
 
@@ -83,6 +84,13 @@ def build_fis(defuzz: str = "centroid", resolution: int = 1001) -> MamdaniFIS:
     return MamdaniFIS(INPUTS, DECISION, build_rules(), defuzz=defuzz, resolution=resolution)
 
 
+def build_it2_fis(fou: float = 0.05, output_fou: float = 0.0, type_reduction: str = "km",
+                  resolution: int = 1001) -> IT2MamdaniFIS:
+    """Interval type-2 version of the paper's FIS (extension, see ``it2.py``): same MFs as principal
+    MFs, same 243 rules, KM type reduction; ``fou = 0`` reproduces ``build_fis()``."""
+    return IT2MamdaniFIS(build_fis("centroid", resolution), fou, output_fou, type_reduction)
+
+
 def crisp_to_layer(c: float) -> str:
     if c != c:  # NaN: no rule fired, there is no decision to map
         raise ValueError("no rule fired (crisp output is NaN)")
@@ -115,8 +123,16 @@ def main() -> None:
     p.add_argument("--bw", type=float, default=3, help="bandwidth [0, 20]")
     p.add_argument("--dl", type=float, default=8, help="deadline [0, 50]")
     p.add_argument("--defuzz", default="centroid", choices=["centroid", "bisector", "mom", "som", "lom"])
+    p.add_argument("--fou", type=float, default=None,
+                   help="also show the interval type-2 decision with this FOU half-width (fraction of each universe)")
     a = p.parse_args()
-    print(explain(build_fis(a.defuzz), {"jl": a.jl, "vt": a.vt, "nl": a.nl, "bw": a.bw, "dl": a.dl}))
+    values = {"jl": a.jl, "vt": a.vt, "nl": a.nl, "bw": a.bw, "dl": a.dl}
+    print(explain(build_fis(a.defuzz), values))
+    if a.fou is not None:
+        res = build_it2_fis(a.fou).infer(values)
+        yl, yr = res.interval
+        print(f"Interval type-2 (FOU {a.fou:g}): type-reduced set [{yl:.2f}, {yr:.2f}] (Karnik-Mendel)"
+              f"  ->  {res.crisp:.2f}  ->  offload to {crisp_to_layer(res.crisp)}")
 
 
 if __name__ == "__main__":

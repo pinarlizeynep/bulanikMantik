@@ -97,19 +97,35 @@ class MamdaniFIS:
         self._cons_idx = np.array(cons, dtype=int)
         self._weights = np.array([r.weight for r in self.rules], dtype=float)
 
-    def infer(self, values: dict[str, float]) -> InferenceResult:
-        mem = {v.name: v.fuzzify(values[v.name]) for v in self.inputs}
+    # The three steps below are shared with the interval type-2 engine (``it2.py``), which runs them
+    # once on the lower and once on the upper membership degrees.
+    def membership_table(self, mem: dict[str, dict[str, float]]) -> np.ndarray:
+        """Membership degrees as an (n_inputs, max_terms + 1) array; the last column is 1 ("don't care")."""
         width = max(len(v.terms) for v in self.inputs) + 1
-        table = np.ones((len(self.inputs), width))  # last column = 1 ("don't care")
+        table = np.ones((len(self.inputs), width))
         for k, v in enumerate(self.inputs):
             table[k, : len(v.terms)] = list(mem[v.name].values())
+        return table
+
+    def fire(self, table: np.ndarray) -> np.ndarray:
+        """Firing strength of every rule: AND = min over its antecedents, times the rule weight."""
         cols = np.arange(len(self.inputs))
-        firing = table[cols, self._term_idx].min(axis=1) * self._weights  # AND = min
-        # Implication (min) + aggregation (max): rules with the same consequent clip the same MF,
-        # so only the strongest of them matters -> one clip per output term instead of per rule.
+        return table[cols, self._term_idx].min(axis=1) * self._weights
+
+    def term_strength(self, firing: np.ndarray) -> np.ndarray:
+        """Strongest firing per output term.
+
+        Implication (min) + aggregation (max): rules with the same consequent clip the same MF, so
+        only the strongest of them matters -> one clip per output term instead of one per rule.
+        """
         strength = np.zeros(len(self._out_mf))
         np.maximum.at(strength, self._cons_idx, firing)
-        agg = np.minimum(strength[:, None], self._out_mf).max(axis=0)
+        return strength
+
+    def infer(self, values: dict[str, float]) -> InferenceResult:
+        mem = {v.name: v.fuzzify(values[v.name]) for v in self.inputs}
+        firing = self.fire(self.membership_table(mem))
+        agg = np.minimum(self.term_strength(firing)[:, None], self._out_mf).max(axis=0)
         return InferenceResult(defuzzify(self._x, agg, self.defuzz), mem, firing, agg)
 
     def compute(self, values: dict[str, float]) -> float:
