@@ -124,6 +124,7 @@ Ayrıca: Cloudlet length=400000, fileSize=outputSize=300. VM: mips=1000, ram=512
    - Enerjinin nasıl toplandığı (boşta güç dahil mi, hangi düğümler) belirtilmemiş; bu seçim enerji sonucunu işaret değiştirecek kadar etkiliyor (4. gün).
    - Denklem numarası atıfları kaymış: metin (19)–(20) yerine (17)–(18) diyor.
    - Alg. 4 "FogDeviceList" üzerinde Edge düğümü arıyor.
+   - **5. gün incelemesinde eklenenler:** Bölüm 2.1 düğüm hızını "1200–1600 MIPS arasında rastgele" diyor, Tablo 3 ise sabit (Edge 1000, Fog 1300) veriyor. Cloud için "Rate/MIPS = 0.001" birimsiz verilmiş. Alg. 5'teki kullanıcı eşikleri λ1–λ3 hiç sayısal verilmemiş. Denk. 16–18'deki offloading koşulu (offloading ile yerel çalıştırma karşılaştırması) IoT cihazına ait parametre gerektiriyor ama Tablo 3'te cihaz yok. "15 birim deadline"ın birimi ve kapsamı belirsiz. Hepsinde seçimimiz kod içinde belgelendi (`nodes.py`, `montage.py`, `qos_selector.py`, `fuzzy_policy.py`).
 7. **Belirsizliğin modellenmesi:** Motivasyon "belirsizlik" olduğu halde Type-1 MF kullanılmış. Ölçüm gürültüsüne karşı dayanıklılık test edilmemiş. **Bu boşluk özgün katkımızın gerekçesidir.**
 8. Güvenlik/gizlilik ve iş göçü (migration) kapsam dışı; yazarlar da bunu kabul ediyor.
 

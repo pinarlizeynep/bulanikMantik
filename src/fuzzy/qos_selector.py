@@ -13,7 +13,11 @@ The target layer is where the policy sends a job; the deadline check of
 ``FuzzyOffloadingPolicy`` (Alg. 5, "dl not met") can still move single jobs of A2 / A3 elsewhere.
 
 The paper writes the sets as L = (0, 0.5], M = [0.2, 0.8], H = [0.5, 1] without giving shapes;
-we use a left shoulder, a triangle and a right shoulder with exactly those supports.
+we read the intervals as the (closed) supports and use a left shoulder, a triangle and a right
+shoulder on them (the membership is 0 at the inner ends, e.g. L(0.5) = 0, and L(0) = 1).
+Alg. 5 splits the hybrid case into F1 / F2 / F3 (rules R10-R11, R12-R13, R14-R16) with user thresholds
+lambda_1..3 that are never given numerically; all three branches run the same 5-input FIS in this
+reproduction and use the published crisp thresholds 60 / 140 (Sec. 2.2) in place of lambda_i.
 Rule strength = min over the three antecedents; the algorithm with the strongest rule wins.
 Table 2 does not cover every combination (e.g. T = E = C = 1/3 fires no rule); then the hybrid
 algorithm A5 is used, which is also the sensible default for a balanced preference.

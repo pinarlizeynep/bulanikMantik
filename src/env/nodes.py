@@ -13,6 +13,14 @@ The paper does not state units or how prices are charged, so this model fixes th
   * task price is charged per second of execution, communication price per MB received
   * one-way network latency per layer (not in Table 3): edge 2 ms, fog 10 ms, cloud 30 ms;
     these values lie inside the FIS latency universe [0, 30] ms.
+Table 3 entries that are deliberately NOT used (paper silent or inconsistent):
+  * the cloud's "Rate/MIPS = 0.001" (no unit or charging rule is given; the task price already
+    prices CPU time) and the CloudSim Cloudlet / Datacenter / VM rows (FogWorkflowSim internals);
+  * Sec. 2.1.1 says node speed is "randomly distributed between 1200 and 1600 MIPS", which contradicts
+    the fixed MIPS of Table 3 (edge 1000, fog 1300); we use Table 3;
+  * Eq. (6) / (15) charge cost per unit of computation *time* (T x C_i x CCT); Table 3 gives a task
+    price and a communication price, so communication is charged per MB received (no Shannon upload
+    model, Eq. 9, either: bandwidths are taken from Table 3 directly).
 """
 from __future__ import annotations
 

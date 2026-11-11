@@ -19,6 +19,9 @@ Runtimes are approximate per-type averages of Pegasus MONTAGE traces (seconds on
 reference CPU), converted to millions of instructions (MI) and jittered by +-20 % per task.
 Each task also gets a deadline slack (s): slack = U(1.2, 4) x reference runtime, capped at 50 s,
 which is the deadline universe [0, 50] of the paper's FIS.
+Deviation from the paper: Sec. 3.2 uses a single "15 unit deadline" without unit or scope.  A
+workflow-level deadline of 15 s (or ms) is infeasible for MONTAGE on Table 3 nodes, and the FIS needs a
+per-task deadline in [0, 50], so we use the per-task slack above.
 """
 from __future__ import annotations
 
