@@ -102,7 +102,12 @@ baseline run on **identical** workflows, nodes and network.
 | [`src/policies`](src/policies) | Proposed fuzzy offloading (Algorithms 1-5), baseline two-way fog-cloud offloading (Khan et al. 2023), single-layer and all-layer MIN-MIN reference policies |
 
 Assumptions the paper leaves open (units, pricing, latency per layer) are documented in
-[`src/env/nodes.py`](src/env/nodes.py). Energy counts idle power only for nodes that executed at
+[`src/env/nodes.py`](src/env/nodes.py); deliberate deviations from the paper (per-task deadlines instead
+of the "15 unit deadline", Table 3 MIPS instead of the 1200-1600 MIPS range of Sec. 2.1, cost per MB
+instead of Eq. 6/15, only the deadline part of the offloading condition Eqs. 16-18, crisp thresholds
+60/140 in place of the unspecified λ_i of Alg. 5) are stated in the docstrings of
+[`montage.py`](src/workflow/montage.py), [`nodes.py`](src/env/nodes.py),
+[`qos_selector.py`](src/fuzzy/qos_selector.py) and [`fuzzy_policy.py`](src/policies/fuzzy_policy.py). Energy counts idle power only for nodes that executed at
 least one task (`simulate(..., idle="used")`; `idle="all"` keeps every node powered on).
 
 ## Reproduction Experiments
@@ -141,10 +146,65 @@ free but slow. A sensitivity run with the physically consistent mapping is in
 ![Table 4 reproduction](results/figures/table4_reproduction.png)
 
 ## Proposed Extension
-_To be added._
+**Interval type-2 (IT2) fuzzy offloading + measurement-noise robustness** — the paper motivates fuzzy
+logic with uncertainty, but its type-1 MFs do not model uncertainty in the measurements themselves.
+
+| Part | Where | What |
+|---|---|---|
+| IT2 MFs | [`src/fuzzy/it2.py`](src/fuzzy/it2.py) | Principal MF = the paper's Fig. 3 MF. FOU = all values the MF takes when the reading is off by up to ±δ, δ = `fou` × universe width: `UMF(x) = max μ(z)`, `LMF(x) = min μ(z)` for z in [x−δ, x+δ]. One parameter, closed form, `fou = 0` → type-1 |
+| IT2 Mamdani FIS | same file, `build_it2_fis()` in [`paper_fis.py`](src/fuzzy/paper_fis.py) | Same 243 rules and operators (min / min / max) on lower and upper degrees → firing intervals → IT2 output set → **Karnik-Mendel** type reduction → `(y_l + y_r)/2` → paper's thresholds 60 / 140. Rule compilation is reused from the type-1 engine; `fou = 0` reproduces the type-1 crisp output (tested to 1e-9) |
+| IT2 policy | `IT2OffloadingPolicy` in [`fuzzy_policy.py`](src/policies/fuzzy_policy.py) | Subclass of the proposed policy; only the FIS changes |
+| Noise model | `InputNoise` | Gaussian noise on the observed FIS inputs, std = level × universe width, clipped; the draw depends only on (seed, task), so both FIS see the same errors |
+| Experiment | [`robustness_it2.py`](experiments/proposed/robustness_it2.py) | 5 noise levels × 2 scenarios (`network`: nl, bw, vt; `all`: all five) × T1 + IT2 FOU 0.025-0.2, MONTAGE 20-300 jobs, seeds 100-109, paired tests |
+
+```bash
+python -m src.fuzzy.paper_fis --jl 10 --vt 50 --nl 25 --bw 3 --dl 8 --fou 0.05   # T1 vs IT2 for one decision
+python -m experiments.proposed.robustness_it2                                     # ~2 min
+```
+
+The main configuration **FOU = 0.05** was fixed on the tuning seeds 0-2 (largest FOU whose noise-free
+makespan / energy / cost stay within ~1 % of type-1) before running the test seeds.
+Decision stability is measured at the identical simulator state: every noisy decision is compared
+with the decision on the clean inputs. Because a FIS that answers "Fog" to everything never flips,
+Cohen's kappa (agreement corrected for chance) is reported next to the flip rate.
+
+![IT2 membership functions](results/figures/it2_membership_functions.png)
 
 ## Experimental Results
-_To be added._
+**IT2 (FOU 0.05) vs. type-1 under noise** — layer flips vs. the noise-free decision, mean over 50 paired
+runs ([`robustness_summary.csv`](results/tables/robustness_summary.csv),
+[`robustness_paired.csv`](results/tables/robustness_paired.csv)):
+
+| Noise std | `network` flips T1 → IT2 | kappa T1 → IT2 | Wilcoxon p | `all` flips T1 → IT2 | kappa T1 → IT2 | Wilcoxon p |
+|---|---|---|---|---|---|---|
+| 0.05 | 8.0 % → **6.6 %** | 0.81 → 0.83 | **0.002** | 11.6 % → **10.1 %** | 0.70 → 0.72 | **0.014** |
+| 0.10 | 12.3 % → 11.3 % | 0.70 → 0.71 | 0.13 | 18.1 % → 16.9 % | 0.53 → 0.54 | 0.44 |
+| 0.20 | 19.7 % → 19.2 % | 0.54 → 0.53 | 0.47 | 26.9 % → 26.0 % | 0.35 → 0.34 | 0.43 |
+| 0.30 | 23.2 % → 22.8 % | 0.45 → 0.44 | 0.50 | 30.7 % → 30.1 % | 0.26 → 0.27 | 0.95 |
+
+| FIS (noise-free) | Makespan (s) | Energy (J) | Cost ($) | Deadline misses | FIS says Edge / Cloud | µs per decision |
+|---|---|---|---|---|---|---|
+| Type-1 (paper) | 369.4 | 1721 | 643.5 | 21.9 % | 19 % / 5.3 % | 47 |
+| IT2 FOU 0.05 | 369.0 | 1720 | 643.0 | 22.2 % | 19 % / 5.5 % | 116 |
+| IT2 FOU 0.1 | 398.4 (+7.9 %) | 1833 | 629.5 | 22.1 % | 16 % / 1.4 % | 136 |
+| IT2 FOU 0.2 | 404.3 (+9.4 %) | 1841 | 649.8 | 22.0 % | 4 % / 0 % | 259 |
+
+- **Small noise:** IT2 (FOU 0.05) removes 13-18 % of the noise-induced layer flips (significant), at
+  the same makespan / energy / cost. **Large noise:** no significant difference — a FOU of ±5 % cannot
+  absorb errors of ±10-30 %.
+- **Wide FOU is not "more robust":** FOU 0.2 flips only ~3-6 % of the decisions, but kappa drops to
+  0.1-0.5 because type reduction pulls almost every output to the middle (Fog). The paper's decision
+  becomes uninformative and the noise-free makespan worsens by 9 %. FOU trades decisiveness for stability.
+- **System-level robustness comes mostly from the deadline check:** with noise of 0.3 on all inputs the
+  type-1 policy's makespan rises only 3 % (369 → 381 s), because Alg. 5's "dl not met" check and MIN-MIN
+  correct many wrong FIS layers. End-to-end metrics of T1 and IT2 do not differ significantly at any
+  noise level (|Δ| < 1 %, except energy whose seed-to-seed std is large).
+
+![Robustness: decision stability](results/figures/robustness_stability.png)
+![Robustness: QoS metrics](results/figures/robustness_metrics.png)
+
+Details, statistics and limitations (in Turkish): [`docs/gunluk/gun5_2026-11-11.md`](docs/gunluk/gun5_2026-11-11.md).
+
 
 ## Limitations
 _To be added._
