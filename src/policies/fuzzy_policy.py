@@ -16,6 +16,9 @@ When a task becomes ready the policy
      and is not verified (Alg. 2-4: "if the offloading condition fails the job is executed locally").
      The check can be switched off (``verify_deadline=False``) for the ablation study.
      Consequently A2 / A3 send *most*, not all, jobs to their target layer when it is fog or cloud.
+     Simplification: Alg. 2-5 also check "T_offload, E_up, C_offload is minimum" (Eqs. 16-18, offloading
+     vs. local execution on the IoT device).  The paper has no device node in Table 3 and no device
+     parameters, so only the deadline part of the offloading condition is modelled.
 MIN-MIN then picks the node inside the chosen layer.
 
 Observation -> FIS input mapping (the paper only names the inputs; the mapping is ours and is
@@ -32,12 +35,19 @@ documented in docs/gunluk/gun4):
   dl  deadline            slack of the task in seconds, already in [0, 50]
 This is the paper's min-max normalisation (Eq. 23) in spirit: raw quantities are divided by a
 maximum and stretched to the universe of the fuzzy variable.
+
+Extension (Day 5): ``IT2OffloadingPolicy`` is the same policy with the interval type-2 FIS of
+``src.fuzzy.it2``; ``noise`` (an ``InputNoise``) perturbs the observed FIS inputs to emulate
+measurement errors.  With noise the clean decision is also computed and logged, so that decision
+flips can be counted at the identical simulator state.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 
-from src.fuzzy.paper_fis import build_fis, crisp_to_layer
+import numpy as np
+
+from src.fuzzy.paper_fis import INPUTS, build_fis, build_it2_fis, crisp_to_layer
 from src.fuzzy.qos_selector import ALGORITHM_LAYER, select_algorithm
 
 BALANCED = (1 / 3, 1 / 3, 1 / 3)  # (time, energy, cost) preference
@@ -97,14 +107,46 @@ def observe(task_id: int, ctx, scales: InputScales = InputScales()) -> dict[str,
     }
 
 
+@dataclass(frozen=True)
+class InputNoise:
+    """Additive Gaussian measurement noise on the observed FIS inputs (robustness experiments).
+
+    ``level`` is the standard deviation as a fraction of each variable's universe width; noisy values
+    are clipped back to the universe.  The draw depends only on ``(seed, task id)``: the same task gets
+    the same error under every policy (common random numbers -> paired comparison), and the five
+    variables always consume the same draws, whichever of them are perturbed.
+    """
+
+    level: float
+    variables: tuple[str, ...] = ("nl", "bw", "vt")
+    seed: int = 0
+
+    def __post_init__(self):
+        unknown = set(self.variables) - {v.name for v in INPUTS}
+        if unknown or self.level < 0:
+            raise ValueError(f"bad noise spec: level={self.level}, unknown variables={sorted(unknown)}")
+
+    def __call__(self, task_id: int, inputs: dict[str, float]) -> dict[str, float]:
+        if self.level == 0:
+            return dict(inputs)
+        z = np.random.default_rng([self.seed, task_id]).standard_normal(len(INPUTS))
+        out = dict(inputs)
+        for v, e in zip(INPUTS, z):
+            if v.name in self.variables:
+                out[v.name] = min(v.hi, max(v.lo, inputs[v.name] + e * self.level * (v.hi - v.lo)))
+        return out
+
+
 @dataclass
 class Decision:
     task: int
     algorithm: str
-    inputs: dict[str, float]
+    inputs: dict[str, float]  # what the FIS saw (noisy if ``noise`` is set)
     crisp: float  # nan for A2-A4
     fis_layer: str
     layer: str
+    clean_crisp: float | None = None  # decision on the noise-free inputs (only logged with noise)
+    clean_layer: str | None = None
 
 
 @dataclass
@@ -123,25 +165,35 @@ class FuzzyOffloadingPolicy:
     scales: InputScales = field(default_factory=InputScales)
     name: str = "Proposed fuzzy (Soni & Kumar)"
     record: bool = True
+    noise: InputNoise | None = None
     decisions: list[Decision] = field(default_factory=list, repr=False)
 
     def __post_init__(self):
         if set(self.layer_map) != {"A2", "A3", "A4"} or not set(self.layer_map.values()) <= set(LAYER_POSITION):
             raise ValueError(f"layer_map must map A2, A3, A4 to Edge/Fog/Cloud, got {self.layer_map}")
-        self.fis = build_fis(self.defuzz)
+        self.fis = self.make_fis()
         self.algorithm = select_algorithm(*self.preference)
         t, e, c = self.preference
         pull = (c * LAYER_POSITION[self.layer_map["A2"]] + e * LAYER_POSITION[self.layer_map["A3"]]
                 + t * LAYER_POSITION[self.layer_map["A4"]])
         self.crisp_shift = self.shift * pull / max(t + e + c, 1e-9)
 
+    def make_fis(self):
+        """The offloading FIS (built once per policy); ``IT2OffloadingPolicy`` overrides this."""
+        return build_fis(self.defuzz)
+
     def _hybrid_layer(self, inputs: dict[str, float]) -> tuple[float, str]:
         crisp = self.fis.compute(inputs) + self.crisp_shift
         return crisp, crisp_to_layer(min(200.0, max(0.0, crisp)))
 
     def allowed_layers(self, task_id: int, ctx) -> tuple[str, ...]:
+        clean_crisp = clean_layer = None
         if self.algorithm == "A5":
             inputs = observe(task_id, ctx, self.scales)
+            if self.noise is not None:
+                if self.record:  # reference decision at the same state, for the flip statistics
+                    clean_crisp, clean_layer = self._hybrid_layer(inputs)
+                inputs = self.noise(task_id, inputs)
             crisp, fis_layer = self._hybrid_layer(inputs)
         else:  # fixed target layer: the FIS inputs are not needed
             inputs, crisp, fis_layer = {}, float("nan"), self.layer_map[self.algorithm]
@@ -156,5 +208,25 @@ class FuzzyOffloadingPolicy:
             elif finish[layer] > ctx.now + ctx.workflow.tasks[task_id].slack_s >= finish[best]:
                 layer = best  # "dl not met" on the chosen layer, but another layer meets it
         if self.record:
-            self.decisions.append(Decision(task_id, self.algorithm, inputs, crisp, fis_layer, layer))
+            self.decisions.append(Decision(task_id, self.algorithm, inputs, crisp, fis_layer, layer,
+                                           clean_crisp, clean_layer))
         return (layer,)
+
+
+@dataclass
+class IT2OffloadingPolicy(FuzzyOffloadingPolicy):
+    """Extension: the proposed policy with the interval type-2 FIS (``src.fuzzy.it2``).
+
+    Everything else -- QoS selection, observation mapping, QoS shift, thresholds, deadline check --
+    is inherited unchanged, so any difference to ``FuzzyOffloadingPolicy`` comes from the FIS alone.
+    ``fou`` is the FOU half-width of the input terms as a fraction of each universe.
+    """
+
+    fou: float = 0.05
+    output_fou: float = 0.0
+    name: str = "Proposed IT2 fuzzy (extension)"
+
+    def make_fis(self):
+        if self.defuzz != "centroid":
+            raise ValueError("IT2OffloadingPolicy type-reduces with the KM centroid; defuzz must be 'centroid'")
+        return build_it2_fis(self.fou, self.output_fou)
