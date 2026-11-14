@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Sis Bilişimde Bulanık Mantık Tabanlı Hesaplama Aktarımı: Yeniden Üretim ve Aralık Tip-2 Genişletmesi</title>
+<style>
+  @page { size: A4; margin: 17mm 15mm 18mm 15mm; }
+  body { font-family: "Times New Roman", Times, serif; font-size: 10pt; line-height: 1.32; color: #000; margin: 0; }
+  header { text-align: center; margin-bottom: 10pt; }
+  h1.title { font-size: 17pt; font-weight: normal; margin: 0 0 6pt 0; line-height: 1.2; }
+  .author { font-size: 10.5pt; margin-bottom: 2pt; }
+  .affil { font-size: 9pt; font-style: italic; }
+  .abstract, .keywords { font-size: 9pt; text-align: justify; margin: 0 0 6pt 0; }
+  .abstract b, .keywords b { font-style: italic; }
+  .cols { column-count: 2; column-gap: 6mm; text-align: justify; hyphens: auto; }
+  h2 { font-size: 10pt; font-variant: small-caps; text-align: center; margin: 9pt 0 4pt; break-after: avoid; }
+  h3 { font-size: 10pt; font-style: italic; font-weight: normal; margin: 6pt 0 2pt; break-after: avoid; }
+  p { margin: 0 0 4pt; text-indent: 1em; }
+  p.noind { text-indent: 0; }
+  ul, ol { margin: 0 0 4pt 0; padding-left: 1.3em; }
+  li { margin-bottom: 1.5pt; }
+  table { border-collapse: collapse; width: 100%; font-size: 8pt; margin: 3pt 0 6pt; break-inside: avoid; }
+  th, td { border-top: 0.5pt solid #000; border-bottom: 0.5pt solid #000; padding: 1.5pt 3pt; text-align: center; }
+  th { font-weight: bold; }
+  td.l, th.l { text-align: left; }
+  caption { font-size: 8pt; font-variant: small-caps; margin-bottom: 2pt; caption-side: top; }
+  figure { margin: 4pt 0 8pt; break-inside: avoid; text-align: center; }
+  figure.wide { column-span: all; }
+  figure img { width: 100%; }
+  figcaption { font-size: 8pt; text-align: justify; margin-top: 2pt; }
+  .eq { text-align: center; margin: 3pt 0; font-style: italic; position: relative; padding: 0 2.2em; }
+  .eq span.n { position: absolute; right: 0; top: 0; font-style: normal; }
+  code { font-family: Consolas, "Courier New", monospace; font-size: 8.3pt; }
+  .refs { font-size: 8pt; }
+  .refs p { text-indent: -1.8em; padding-left: 1.8em; margin-bottom: 2pt; }
+  .tablewide { column-span: all; }
+  b.k { font-weight: bold; }
+</style>
+</head>
+<body>
+<header>
+  <h1 class="title">Sis Bilişimde Bulanık Mantık Tabanlı Hesaplama Aktarımı:<br>Yeniden Üretim, Aralık Tip-2 Genişletmesi ve Ablasyon Çalışması</h1>
+  <div class="author">Zeynep Pınarlı — 1306220076</div>
+  <div class="affil">Bulanık Mantık Dersi Dönem Projesi, Güz 2026 — Kod: github.com/pinarlizeynep/bulanikMantik</div>
+</header>
+
+<p class="abstract"><b>Özet</b>—Bu çalışmada Soni ve Kumar'ın (2024) sis bilişim için önerdiği bulanık mantık tabanlı hesaplama aktarımı (offloading) yöntemi Python ile sıfırdan yeniden gerçekleştirilmiş, makalenin Şekil 4 ve Tablo 4 deneyleri aynı simülatör içinde klasik iki yönlü fog–cloud yöntemine karşı 10 bağımsız tekrarla yeniden üretilmiştir. Önerilen yöntemin makespan (%4.0) ve maliyet (%21.9) kazancı yön olarak doğrulanmış, enerji kazancı ise üretilememiş (−%4.2) ve nedeni boşta güç muhasebesine bağlanmıştır. Makalenin QoS-katman eşlemesinin kendi düğüm parametreleriyle çeliştiği sayısal olarak gösterilmiştir. Özgün katkı olarak (i) makalenin Tip-1 üyelik fonksiyonlarını tek parametreli bir belirsizlik ayak izi (FOU) ile genişleten ve Karnik-Mendel tip indirgemesi kullanan bir aralık tip-2 (IT2) çıkarım sistemi, (ii) ölçüm gürültüsü altında karar kararlılığı analizi ve (iii) Sugeno ile durulaştırma yöntemlerini kapsayan bir ablasyon çalışması sunulmuştur. IT2 sistemi düşük gürültüde gürültü kaynaklı katman değişimlerini anlamlı biçimde azaltmış (%8.0→%6.6, p=0.002), QoS metriklerini ise değiştirmemiştir. Ablasyon, yöntemin başarısını taşıyan bileşenin bulanık sistemden çok algoritmadaki kesin deadline kontrolü olduğunu ortaya koymuştur.</p>
+<p class="keywords"><b>Anahtar kelimeler</b>—Sis bilişim, hesaplama aktarımı, Mamdani bulanık çıkarım, aralık tip-2 bulanık mantık, Karnik-Mendel, Sugeno, ablasyon, yeniden üretilebilirlik.</p>
+
+<div class="cols">
+
+<h2>I. Giriş</h2>
+<p>Nesnelerin İnterneti (IoT) cihazları, kendi işlem kapasitelerini aşan iş akışlarını üretir. Bu işlerin hangi katmanda çalıştırılacağı—cihaza yakın ama zayıf <i>edge</i>, orta düzey <i>fog</i> ya da güçlü ama uzak ve pahalı <i>cloud</i>—tamamlanma süresini (makespan), enerji tüketimini ve parasal maliyeti doğrudan belirler [13], [14]. Karar anında yük, ağ gecikmesi ve bant genişliği sürekli değişir ve ancak gürültülü ölçümlerle bilinir. Kesin matematiksel optimizasyon bu koşullarda pahalıdır; bulanık mantık ise "gecikme <i>yüksek</i> ve deadline <i>sıkı</i> ise işi yakında tut" gibi dilsel kurallarla ucuz ve açıklanabilir kararlar verir [2].</p>
+<p>Soni ve Kumar [1] bu motivasyonla beş girdili bir Mamdani bulanık çıkarım sistemi (FIS) ile kullanıcının zaman/enerji/maliyet tercihine göre algoritma seçen ikinci bir bulanık katman önermiş, FogWorkflowSim [4] üzerinde klasik iki yönlü fog–cloud yöntemine [3] göre makespan, enerji ve maliyette sırasıyla %7.51, %4.63 ve %13.60 iyileşme raporlamıştır. Ancak makalenin kodu, kural tabanının tamamı ve üyelik fonksiyonu (MF) değerleri paylaşılmamış, sonuçlar tekrar ve varyans olmadan verilmiştir. Ayrıca motivasyon "belirsizlik" olduğu hâlde ölçüm belirsizliğini modellemeyen Tip-1 kümeler kullanılmıştır.</p>
+<p class="noind">Bu projenin katkıları:</p>
+<ol>
+<li>Makalenin iki katmanlı bulanık karar yapısının, MIN-MIN zamanlayıcının ve Tablo 3 ortamının Python'da sıfırdan, testlerle doğrulanmış biçimde yeniden gerçekleştirilmesi; baseline'ın <i>aynı</i> simülatörde koşulmasıyla adil karşılaştırma.</li>
+<li>Şekil 4 ve Tablo 4'ün 10 tohumla, eşli istatistiksel testlerle yeniden üretimi ve makaledeki iç tutarsızlıkların sayısal gösterimi.</li>
+<li>Makalenin MF'lerini ana (principal) MF olarak koruyan, tek parametreli FOU'lu bir IT2 FIS ve gürültü altında karar kararlılığı analizi.</li>
+<li>Çıkarım türü (Mamdani/Sugeno/IT2), durulaştırma yöntemi, deadline kontrolü ve enerji muhasebesi üzerinde bir ablasyon çalışması.</li>
+</ol>
+
+<h2>II. İlgili Çalışmalar</h2>
+<p>Fog bilişim, bulutun işlem ve depolama hizmetlerini ağın kenarına yaklaştırmak üzere Bonomi vd. [13] tarafından tanımlanmıştır. Mach ve Becvar [14], mobil edge bilişimde aktarım kararlarını gecikme ve enerji ödünleşimi açısından inceler; Kumari vd. [5] ise fog bilişimde görev aktarımı için önerilen algoritmaları ve optimizasyon tekniklerini derler.</p>
+<p>Bulanık mantığın bu alandaki en yakın öncülü Sonmez vd.'nin [2] edge–cloud iş yükü düzenleme çalışmasıdır: Tip-1 Mamdani FIS, WAN bant genişliği, görev uzunluğu, gecikme hassasiyeti ve VM kullanımı girdileriyle görevin yerel edge, komşu edge ya da cloud'a gönderilmesine karar verir. Soni ve Kumar [1] bu fikri üç katmana ve iş akışlarına taşır, kullanıcı QoS tercihini ikinci bir bulanık katmanla ekler. Karşılaştırdıkları Khan vd. [3] ise fog ile cloud arasında iki yönlü, kesin kurallı bir yerleştirme önerir; edge'i yürütme hedefi olarak kullanmaz. Çalışmaların ortak simülasyon altyapısı WorkflowSim/FogWorkflowSim [4] ve MONTAGE gibi Pegasus iş akışlarıdır [16], [17]; katman içi zamanlama için klasik MIN-MIN sezgiseli [15] kullanılır.</p>
+<p>Tip-2 bulanık kümeler, üyelik derecesinin kendisinin belirsiz olduğu durumlar için önerilmiştir; Liang ve Mendel [10] aralık tip-2 FLS'nin teorisini ve tasarımını, Mendel ve John [11] sezgisel bir sunumunu vermiştir. Tip indirgemenin standart yöntemi Karnik-Mendel (KM) algoritmasıdır [9]; Wu ve Mendel [12] hızlandırılmış sürümlerini önermiştir. Bildiğimiz kadarıyla [1]'in üç katmanlı offloading yapısı tip-2 kümelerle ya da ölçüm gürültüsü altında incelenmemiştir; bu çalışmanın özgün katkısı bu boşluğa yöneliktir.</p>
+
+<table>
+<caption>Tablo I. İlgili çalışmaların karşılaştırması</caption>
+<tr><th class="l">Çalışma</th><th>Katman</th><th>Karar yöntemi</th><th>Ölçüm belirsizliği</th></tr>
+<tr><td class="l">Sonmez vd. [2]</td><td>Edge–Cloud</td><td>T1 Mamdani</td><td>modellenmemiş</td></tr>
+<tr><td class="l">Khan vd. [3]</td><td>Fog–Cloud</td><td>Kesin kurallar</td><td>modellenmemiş</td></tr>
+<tr><td class="l">Soni ve Kumar [1]</td><td>E–F–C</td><td>T1 Mamdani + QoS FIS</td><td>modellenmemiş</td></tr>
+<tr><td class="l">Bu çalışma</td><td>E–F–C</td><td>T1, IT2, Sugeno</td><td>IT2 FOU + gürültü deneyi</td></tr>
+</table>
+
+<h2>III. Teorik Altyapı</h2>
+<h3>A. Bulanık kümeler ve dilsel değişkenler</h3>
+<p>Zadeh'in [6] bulanık kümesi <i>A</i>, evrendeki her <i>x</i>'e [0,1] aralığında bir üyelik derecesi μ<sub>A</sub>(x) atar. Dilsel değişken (ör. "ağ gecikmesi"), terimleri (Low/Average/High) bulanık kümelerle tanımlanan bir değişkendir. Bu çalışmada makaleye uygun olarak üçgen <i>tri(a,b,c)</i> ve yamuk <i>trap(a,b,c,d)</i> MF'ler kullanılır; <i>a=b</i> ya da <i>c=d</i> durumu sol/sağ omuzdur.</p>
+<h3>B. Mamdani çıkarımı</h3>
+<p>Mamdani ve Assilian [7] tipi çıkarımda bir kural "EĞER x<sub>1</sub> A<sub>1</sub> VE … VE x<sub>5</sub> A<sub>5</sub> İSE y B" biçimindedir. Ateşleme gücü w<sub>i</sub> = min<sub>k</sub> μ<sub>A<sub>k</sub></sub>(x<sub>k</sub>); sonuç kümesi w<sub>i</sub>'de kırpılır (min), tüm kırpılmış kümeler max ile birleştirilir ve ağırlık merkezi (COG) ile durulaştırılır:</p>
+<p class="eq">y* = ∫ y·μ<sub>B'</sub>(y) dy / ∫ μ<sub>B'</sub>(y) dy <span class="n">(1)</span></p>
+<p>Ablasyonda başka durulaştırma yöntemleri de incelenir. <i>Bisector</i>, birleşik kümenin alanını iki eşit parçaya bölen y değeridir: ∫<sub>min</sub><sup>y</sup> μ = ∫<sub>y</sub><sup>max</sup> μ. Maksimum tabanlı yöntemler yalnızca en yüksek üyelik derecesini alan noktalar kümesi P = {y : μ(y) = max μ} ile çalışır: MOM bu kümenin ortalamasını, SOM en küçüğünü, LOM en büyüğünü verir. COG ve bisector tüm kural katkılarını (alanı) hesaba katar ve girdiye göre süreklidir. Maksimum tabanlı yöntemler yalnızca en güçlü kurala bakar; bir kural diğerini geçtiğinde çıktı sıçrar.</p>
+<h3>C. Sugeno çıkarımı</h3>
+<p>Takagi-Sugeno-Kang [8] çıkarımında sonuç bir fonksiyondur; sıfırıncı derecede sabit z<sub>i</sub>'dir. Çıktı ağırlıklı ortalamadır ve integral gerektirmez:</p>
+<p class="eq">y = Σ<sub>i</sub> w<sub>i</sub> z<sub>i</sub> / Σ<sub>i</sub> w<sub>i</sub> <span class="n">(2)</span></p>
+<h3>D. Aralık tip-2 bulanık mantık</h3>
+<p>Bir IT2 kümede her <i>x</i>'in üyeliği bir aralıktır: [μ̲(x), μ̄(x)]. Alt MF (LMF) ile üst MF (UMF) arasındaki bölge belirsizlik ayak izidir (FOU) [10], [11]. Kurallar alt ve üst dereceler için ayrı ayrı ateşlenerek bir ateşleme aralığı [f̲<sub>i</sub>, f̄<sub>i</sub>] ve bir IT2 çıktı kümesi elde edilir. Bu kümenin ağırlık merkezi bir aralıktır [y<sub>l</sub>, y<sub>r</sub>]; uçları, ayrık noktalarda alt ya da üst ağırlığın seçildiği bir anahtarlama noktasıyla bulunur:</p>
+<p class="eq">y<sub>l</sub> = min<sub>k</sub> (Σ<sub>i≤k</sub> x<sub>i</sub>μ̄<sub>i</sub> + Σ<sub>i&gt;k</sub> x<sub>i</sub>μ̲<sub>i</sub>) / (Σ<sub>i≤k</sub> μ̄<sub>i</sub> + Σ<sub>i&gt;k</sub> μ̲<sub>i</sub>) <span class="n">(3)</span></p>
+<p class="noind">ve y<sub>r</sub> simetrik olarak max ile tanımlanır. KM algoritması [9] anahtarlama noktasını yinelemeli olarak bulur ve sonlu adımda yakınsar. Crisp çıktı (y<sub>l</sub>+y<sub>r</sub>)/2'dir.</p>
+
+<h3>E. Değerlendirmede kullanılan istatistikler</h3>
+<p>İki politika aynı iş akışı ve aynı gürültü çekilişleri üzerinde koşulduğundan farklar eşlidir. Ortalama farkın sıfırdan farkı tek örneklem t-testiyle, dağılım varsayımı gerektirmeyen biçimde ise Wilcoxon işaretli sıra testiyle [18] sınanır. İki katman etiketlemesinin uyumu için Cohen κ [19] kullanılır:</p>
+<p class="eq">κ = (p<sub>o</sub> − p<sub>e</sub>) / (1 − p<sub>e</sub>), &nbsp; p<sub>e</sub> = Σ<sub>k</sub> p<sub>k</sub><sup>temiz</sup> · p<sub>k</sub><sup>gürültülü</sup> <span class="n">(5)</span></p>
+<p class="noind">Burada p<sub>o</sub> gözlenen uyum oranı, p<sub>e</sub> iki etiketlemenin katman paylarından beklenen şans uyumudur. κ=1 tam uyum, κ=0 şans düzeyidir. Her kararı aynı katmana veren bir sistem p<sub>o</sub>'yu yüksek tutsa da κ'yı sıfıra yaklaştırır.</p>
+<h2>IV. Referans Yöntem</h2>
+<p>Yöntem iki bulanık katmandan oluşur. <b class="k">QoS seçici</b> (makalede Algoritma 1 ve Tablo 2; burada Tablo III): kullanıcının zaman (T), enerji (E) ve maliyet (C) tercihleri [0,1]'de Low/Medium/High olarak bulanıklaştırılır ve 16 kural dört algoritmadan birini seçer: A2 (maliyet→cloud), A3 (enerji→fog), A4 (zaman→edge) ve A5 (hibrit). <b class="k">Offloading FIS'i</b> (Algoritma 5): A5'te her iş için beş girdi—iş listesi boyutu <i>jl</i>, VM kullanımı <i>vt</i>, ağ gecikmesi <i>nl</i>, bant genişliği <i>bw</i>, deadline <i>dl</i>—üçer terimle bulanıklaştırılır, 3<sup>5</sup>=243 kurallık Mamdani sistemi min/min/max/COG ile [0,200]'de bir değer üretir: &lt;60 edge, 60–140 fog, &gt;140 cloud. Algoritma 5 ayrıca seçilen katman deadline'ı karşılamıyorsa ("dl not met") başka bir katmana geçilmesini öngörür. Katman içindeki düğümü MIN-MIN seçer. Deney ortamı FogWorkflowSim, MONTAGE iş akışı, 20–300 iş ve Tablo 3'teki düğüm parametreleridir (Tablo II).</p>
+
+<table>
+<caption>Tablo II. Düğüm parametreleri (makale, Tablo 3)</caption>
+<tr><th class="l">Katman</th><th>MIPS</th><th>Up/Down (Mb/s)</th><th>P<sub>çalışma</sub>/P<sub>boşta</sub> (mW)</th><th>Görev/iletişim fiyatı</th></tr>
+<tr><td class="l">Cloud</td><td>1600</td><td>300 / 500</td><td>1600 / 1300</td><td>0.96 / 0.02</td></tr>
+<tr><td class="l">Fog</td><td>1300</td><td>500 / 800</td><td>800 / 40</td><td>0.48 / 0.01</td></tr>
+<tr><td class="l">Edge</td><td>1000</td><td>800 / 1000</td><td>700 / 30</td><td>0 / 0</td></tr>
+</table>
+
+<table>
+<caption>Tablo III. QoS seçici kuralları (makale, Tablo 2; T, E, C → algoritma)</caption>
+<tr><th>Kurallar</th><th>(T, E, C)</th><th>Algoritma</th><th>Hedef katman</th></tr>
+<tr><td>R1–R3</td><td>(L,L,H) (L,M,H) (M,M,H)</td><td>A2 maliyet</td><td>Cloud</td></tr>
+<tr><td>R4–R6</td><td>(L,H,L) (L,H,M) (M,H,M)</td><td>A3 enerji</td><td>Fog</td></tr>
+<tr><td>R7–R9</td><td>(H,L,L) (H,L,M) (H,M,M)</td><td>A4 zaman</td><td>Edge</td></tr>
+<tr><td>R10–R16</td><td>en az iki öncelik yüksek</td><td>A5 hibrit</td><td>FIS karar verir</td></tr>
+</table>
+<p>Kümeler destekleri verilen sol omuz, üçgen ve sağ omuz olarak (L=(0,0.5], M=[0.2,0.8], H=[0.5,1]) gerçekleştirilmiş, kural gücü üç öncülün min'i, kazanan en güçlü kuraldır. Dengeli tercih (T=E=C=1/3) hiçbir kuralı ateşlemediğinden A5'e yönlendirilir. A5'te her tercih, crisp çıktıyı kendi saf algoritmasının katmanına doğru 40 birimlik bir kaymayla iter; dengeli tercihte kayma sıfırdır.</p>
+<figure class="wide">
+<svg viewBox="0 0 900 150" width="100%" xmlns="http://www.w3.org/2000/svg" font-family="Times New Roman, serif" font-size="13">
+<defs><marker id="ar" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 z" fill="#000"/></marker></defs>
+<g fill="none" stroke="#000" stroke-width="1.2">
+<rect x="5" y="45" width="95" height="50" rx="4"/><rect x="118" y="45" width="152" height="50" rx="4"/>
+<rect x="290" y="5" width="150" height="50" rx="4"/><rect x="290" y="85" width="150" height="55" rx="4" stroke-dasharray="4 3"/>
+<rect x="470" y="45" width="130" height="50" rx="4"/><rect x="630" y="45" width="120" height="50" rx="4"/>
+<rect x="780" y="5" width="110" height="38" rx="4"/><rect x="780" y="51" width="110" height="38" rx="4"/><rect x="780" y="97" width="110" height="38" rx="4"/>
+<path d="M100,70 H116" marker-end="url(#ar)"/><path d="M270,62 L288,40" marker-end="url(#ar)"/><path d="M270,78 L288,100" marker-end="url(#ar)"/>
+<path d="M440,30 L468,62" marker-end="url(#ar)"/><path d="M440,112 L468,80" marker-end="url(#ar)"/><path d="M600,70 H628" marker-end="url(#ar)"/>
+<path d="M750,62 L778,24" marker-end="url(#ar)"/><path d="M750,70 H778" marker-end="url(#ar)"/><path d="M750,78 L778,116" marker-end="url(#ar)"/>
+</g>
+<g text-anchor="middle" fill="#000">
+<text x="52" y="66">IoT iş akışı</text><text x="52" y="82" font-size="11">(MONTAGE DAG)</text>
+<text x="194" y="66">QoS seçici</text><text x="194" y="82" font-size="11">T, E, C → A2–A5 (16 kural)</text>
+<text x="365" y="26">A2 / A3 / A4</text><text x="365" y="42" font-size="11">sabit hedef katman</text>
+<text x="365" y="104">A5: 5 girdili FIS</text><text x="365" y="119" font-size="11">jl vt nl bw dl, 243 kural</text><text x="365" y="133" font-size="11">T1 COG | IT2 KM | Sugeno</text>
+<text x="535" y="66">Deadline kontrolü</text><text x="535" y="82" font-size="11">"dl not met" → min EFT</text>
+<text x="690" y="66">MIN-MIN</text><text x="690" y="82" font-size="11">katman içi düğüm</text>
+<text x="835" y="29">Edge (1000 MIPS)</text><text x="835" y="75">Fog (1300 MIPS)</text><text x="835" y="121">Cloud (1600 MIPS)</text>
+</g>
+</svg>
+<figcaption>Şekil 1. Yeniden gerçekleştirilen sistemin mimarisi. Kesikli kutu, genişletmede değiştirilen bileşendir (Tip-1 Mamdani yerine IT2 ya da Sugeno); diğer tüm bileşenler ortaktır.</figcaption>
+</figure>
+<h2>V. Yeniden Gerçekleştirme Yöntemi</h2>
+<h3>A. Bulanık çıkarım motoru</h3>
+<p>Mamdani motoru (<code>src/fuzzy/mamdani.py</code>) sıfırdan yazılmış, scikit-fuzzy ile çapraz testlerle doğrulanmıştır. 243 kural bir kez dizin dizilerine derlenir; aynı sonuca giden kuralların kırptığı kümeler iç içe olduğundan birleştirme, terim başına en güçlü kuralla (243 yerine 3 kırpma) matematiksel olarak eşdeğer biçimde yapılır. Karar başına süre ~50 µs'dir.</p>
+<p>Tablo IV, sistemin iki girdi için ürettiği kararı adım adım gösterir. Birinci örnekte (küçük kuyruk, düşük yük, yüksek gecikme, düşük bant genişliği, sıkı deadline) 243 kuraldan 8'i ateşlenir ve hepsi edge önerir; üç sistem de edge der. İkinci örnek iki katmanın sınırındadır: Mamdani 131 (fog), Sugeno 153 (cloud) üretir; IT2'nin tip indirgenmiş aralığı [110.9, 144.9] 140 eşiğini kesmektedir, yani karar belirsizdir ve orta noktası 127.9 ile fog'dur. IT2 aralığı, Tip-1'in tek sayıyla gizlediği karar belirsizliğini görünür kılar. Şekil 2, iki girdiye göre çıktı yüzeyini gösterir.</p>
+<table>
+<caption>Tablo IV. Örnek kararlar (girdiler: jl, vt, nl, bw, dl)</caption>
+<tr><th class="l">Girdi</th><th>Mamdani COG</th><th>Sugeno</th><th>IT2 [y<sub>l</sub>, y<sub>r</sub>] → y</th></tr>
+<tr><td class="l">(10, 50, 25, 3, 8)</td><td>40.0 Edge</td><td>40.0 Edge</td><td>[38.6, 46.0] → 42.3 Edge</td></tr>
+<tr><td class="l">(35, 180, 5, 17, 45)</td><td>131.0 Fog</td><td>153.4 Cloud</td><td>[110.9, 144.9] → 127.9 Fog</td></tr>
+</table>
+<figure class="wide">
+<img style="width:62%" src="../results/figures/control_surfaces.png" alt="Kontrol yüzeyleri">
+<figcaption>Şekil 2. Mamdani FIS'in kontrol yüzeyleri (diğer girdiler orta değerde sabit).</figcaption>
+</figure>
+<h3>B. Makalenin vermediği bileşenler</h3>
+<p><i>Üyelik fonksiyonları</i> makalenin Şekil 3'ünden okunmuştur (Tablo VI, Şekil 3). <i>Kural tabanı:</i> makale yalnızca üç örnek kural (R1–R3) verir. Her terime bir yön puanı atanmıştır (cloud'a iten +1, nötr 0, edge'e çeken −1; ör. yüksek gecikme −1, yüksek bant genişliği +1); toplam puan s∈[−5,5] için s≤−2 edge, |s|≤1 fog, s≥2 cloud kuralı üretilir. Bu şema yayımlanan üç kuralı birebir üretir. Kural sayısı tam 3<sup>5</sup> olduğundan her girdi kombinasyonu en az bir kuralı ateşler; kural tabanı tamdır ve tutarlıdır (aynı öncüle sahip iki kural yoktur).</p>
+<p><i>Gözlem eşlemesi:</i> makale girdilerin adını verir, simülatör durumundan nasıl ölçüldüğünü vermez. Eşleme, makalenin min-max normalizasyonu (Denk. 23) ruhunda ham büyüklüğü bir referansa bölüp değişkenin evrenine ölçekler (Tablo V). Ölçek sabitleri yalnızca girdi dağılımlarına bakılarak, evrenlerin geniş bir kısmının kullanılması hedefiyle 0–2 numaralı tohumlarda ayarlanmış; tüm deneyler 100–109 tohumlarıyla koşulmuştur, böylece sonuç metriklerine bakarak ayar yapılmamıştır. Tablo 3 ortamında bant genişliği statik olduğundan <i>bw</i> pratikte üç değer alır (cihazdan yükleme, edge/fog'dan aktarım, veri zaten cloud'da); kararları ağırlıklı olarak <i>jl</i>, <i>vt</i> ve <i>dl</i> yönlendirir. Politikanın tam karar akışı Algoritma 1 ve Şekil 1'de özetlenmiştir.</p>
+<table>
+<caption>Tablo V. Simülatör durumundan FIS girdilerine eşleme</caption>
+<tr><th class="l">Girdi</th><th class="l">Ölçülen büyüklük</th><th>Ölçek</th></tr>
+<tr><td class="l">jl</td><td class="l">Hazır kuyruktaki görev sayısı</td><td>40'a kırpılır</td></tr>
+<tr><td class="l">vt</td><td class="l">Edge+fog düğüm kuyruğu + henüz atanmamış bekleyen iş</td><td>60 s = %100</td></tr>
+<tr><td class="l">nl</td><td class="l">Görev verisinin cloud'a ve fog'a ulaşma süresi farkı</td><td>0.25 s = 30</td></tr>
+<tr><td class="l">bw</td><td class="l">En iyi cloud düğümüne darboğaz hız min(Up<sub>kaynak</sub>, Down<sub>hedef</sub>)</td><td>800 Mb/s = 20</td></tr>
+<tr><td class="l">dl</td><td class="l">Görevin süre payı (deadline − hazır olma)</td><td>s, 50'ye kırpılır</td></tr>
+</table>
+<div style="break-inside: avoid; border-top: 0.8pt solid #000; border-bottom: 0.8pt solid #000; padding: 2pt 0; margin: 4pt 0 6pt; font-size: 8.3pt;">
+<div style="font-variant: small-caps; border-bottom: 0.5pt solid #000; margin-bottom: 2pt;">Algoritma 1. Hazır bir görev için katman kararı (<code>FuzzyOffloadingPolicy</code>)</div>
+<div style="font-family: Consolas, monospace; font-size: 7.6pt; line-height: 1.35; white-space: pre-wrap;">1  a ← QoS_seçici(T, E, C)                 // Tablo III
+2  eğer a ∈ {A2, A3, A4}: L ← hedef_katman(a)
+3  değilse:                                  // A5, hibrit
+4     x ← gözlem(simülatör durumu)           // Tablo V
+5     c ← FIS(x) + 40·Σ tercih·konum / (T+E+C)
+6     L ← Edge (c&lt;60) | Fog (60≤c≤140) | Cloud (c&gt;140)
+7  eğer L yerel edge değil ve EFT(L) &gt; deadline
+      ve ∃L': EFT(L') ≤ deadline:          // "dl not met"
+8     L ← argmin<sub>L'</sub> EFT(L')
+9  MIN-MIN, görevi L içindeki en erken bitiren düğüme atar</div>
+</div>
+
+<table>
+<caption>Tablo VI. Şekil 3'ten okunan MF parametreleri</caption>
+<tr><th class="l">Değişken</th><th>Evren</th><th>Düşük</th><th>Orta</th><th>Yüksek</th></tr>
+<tr><td class="l">jl</td><td>[0,40]</td><td>trap(0,0,8,16)</td><td>tri(8,24,40)</td><td>trap(32,38,40,40)</td></tr>
+<tr><td class="l">vt</td><td>[0,200]</td><td>trap(0,0,40,80)</td><td>tri(40,120,200)</td><td>trap(160,180,200,200)</td></tr>
+<tr><td class="l">nl</td><td>[0,30]</td><td>trap(0,0,4,8)</td><td>tri(4,17,30)</td><td>trap(20,28,30,30)</td></tr>
+<tr><td class="l">bw</td><td>[0,20]</td><td>trap(0,0,4,8)</td><td>tri(4,12,20)</td><td>trap(16,18,20,20)</td></tr>
+<tr><td class="l">dl</td><td>[0,50]</td><td>trap(0,0,10,20)</td><td>tri(10,30,50)</td><td>trap(40,48,50,50)</td></tr>
+<tr><td class="l">Çıktı</td><td>[0,200]</td><td>E: tri(0,40,80)</td><td>F: tri(40,100,160)</td><td>C: tri(120,160,200)</td></tr>
+</table>
+<figure class="wide">
+<img style="width:66%" src="../results/figures/membership_functions.png" alt="Üyelik fonksiyonları">
+<figcaption>Şekil 3. Makalenin Şekil 3'ünden okunan girdi ve çıktı üyelik fonksiyonları (60 / 140 eşikleri çıktı panelinde).</figcaption>
+</figure>
+
+<h3>C. Simülatör ve baseline</h3>
+<p>FogWorkflowSim ve makalenin kurulumu paylaşılmadığından Tablo 3'ü kullanan bir Python simülatörü yazılmıştır. Her katmanda iki düğüm vardır; aktarım süresi gecikme + 8·MB/min(Up<sub>kaynak</sub>, Down<sub>hedef</sub>) ile hesaplanır. MONTAGE üreteci gerçek Pegasus yapısını (mProjectPP→mDiffFit→…→mJPEG) izler ve tam N görev üretir; N=25 için gerçek Montage_25 ile aynı yapıyı verir. Görevler hazır olduğunda politikaya bir kez sorulur, MIN-MIN izin verilen düğümler arasında en erken bitişi seçer. Makespan son bitiş − ilk başlangıç (makale Denk. 12), enerji yalnızca iş çalıştıran düğümlerin çalışma ve boşta enerjisi, maliyet çalışma süresi × görev fiyatı + alınan MB × iletişim fiyatıdır. Baseline [3], fog'u önceleyen, deadline'ı karşılanamıyorsa cloud'a çıkan iki yönlü kesin kural olarak <i>aynı</i> simülatörde gerçekleştirilmiştir. Böylece makalenin baseline sonuçlarını başka bir simülatörden alması sorunu giderilmiştir.</p>
+<h3>D. Makaleden sapmalar</h3>
+<p>Makalenin sustuğu ya da çeliştiği noktalarda seçimlerimiz kodda belgelenmiştir: görev başına süre payı ("15 birim deadline" birimsizdir); Tablo 3'teki sabit MIPS (Bölüm 2.1'deki 1200–1600 rastgele aralığı yerine); Denk. 16–18'deki "offloading vs. yerel çalıştırma" koşulunun yalnızca deadline kısmı (IoT cihaz parametresi verilmemiştir); Alg. 5'teki λ<sub>1</sub>–λ<sub>3</sub> yerine yayımlanmış 60/140 eşikleri; Tablo 2'nin kapsamadığı dengeli tercih için A5.</p>
+
+<h2>VI. Önerilen Genişletme</h2>
+<h3>A. Gerekçe</h3>
+<p>Makale bulanık mantığı belirsizlikle gerekçelendirir, ancak Tip-1 MF'de 7.9 ms'lik bir gecikme ölçümü "Low" kümesine tek bir kesin dereceyle aittir. Ölçüm gürültülüyse bu kesinlik yanıltıcıdır. IT2 kümeler bu belirsizliği MF'nin kendisine taşır ve literatürde gürültülü girdilerde daha pürüzsüz kontrol yüzeyleriyle ilişkilendirilir [10], [11]. Soru şudur: IT2, gürültülü ölçümler altında offloading kararlarını daha kararlı kılar mı, ve bunun QoS'e bedeli nedir?</p>
+<h3>B. FOU tasarımı: belirsiz konum</h3>
+<p>Makalenin her MF'i μ ana MF olarak korunur. Okunan değer gerçek değerden en fazla ±δ sapabiliyorsa üyelik, μ'nün [x−δ, x+δ] penceresinde aldığı her değer olabilir:</p>
+<p class="eq">μ̄(x) = max<sub>z∈[x−δ,x+δ]</sub> μ(z), &nbsp; μ̲(x) = min<sub>z∈[x−δ,x+δ]</sub> μ(z) <span class="n">(4)</span></p>
+<p class="noind">δ = <i>fou</i> × evren genişliğidir; pencere evrene kırpılır. Üçgen ve yamuk tek tepeli olduğundan max ve min pencerenin uçlarında ya da çekirdekte alınır, yani kapalı formda hesaplanır. <i>fou</i>=0 makalenin sistemini verir. Çıktı kümeleri Tip-1 bırakılmıştır, böylece 60/140 eşiklerinin anlamı korunur (Şekil 4).</p>
+<figure class="wide">
+<img style="width:88%" src="../results/figures/it2_membership_functions.png" alt="IT2 üyelik fonksiyonları">
+<figcaption>Şekil 4. FOU = 0.05 ile IT2 üyelik fonksiyonları: düz çizgi makalenin (ana) MF'i, gölgeli bant alt ve üst MF arasındaki FOU.</figcaption>
+</figure>
+<h3>C. IT2 çıkarımı</h3>
+<p>Kural tabanı Tip-1 motorundan derlenmiş hâliyle alınır; ateşleme bir kez alt, bir kez üst dereceler için yapılır, min/max ile IT2 çıktı kümesi oluşur, KM (3) ile [y<sub>l</sub>, y<sub>r</sub>] bulunur. KM'de Tip-1 COG ile aynı yamuk kuralı ağırlıkları kullanıldığından <i>fou</i>=0'da IT2 çıktısı Tip-1 çıktısıyla 10<sup>−9</sup> içinde aynıdır (test edilmiştir). KM, tüm anahtarlama noktalarını kümülatif toplamlarla deneyen kesin bir yöntemle doğrulanmıştır. <code>IT2OffloadingPolicy</code> yalnızca FIS'i değiştirir; QoS seçimi, gözlem eşlemesi ve deadline kontrolü aynıdır, dolayısıyla her fark FIS'ten kaynaklanır.</p>
+<h3>D. Gürültü modeli ve kararlılık ölçütleri</h3>
+<p>Gözlenen girdilere std = <i>level</i> × evren genişliği olan Gauss gürültüsü eklenir ve evrene kırpılır. Gürültü yalnızca (tohum, görev) ile belirlenir: aynı görev her politikada aynı hatayı görür (ortak rastgele sayılar, eşli karşılaştırma). Kararlılık <i>aynı simülatör durumunda</i> ölçülür: her gürültülü kararda temiz girdilerle de FIS çalıştırılır; <i>flip</i>, iki katman kararının farklı olmasıdır. Her şeye "Fog" diyen bir sistem hiç flip yapmayacağı için şansa göre düzeltilmiş uyum, Cohen κ [19] da raporlanır.</p>
+<h3>E. Ablasyon</h3>
+<p>Önerilen politikanın bileşenleri tek tek değiştirilir: çıkarım türü (Mamdani, sıfırıncı derece Sugeno (2), IT2), durulaştırma (COG, bisector, MOM, SOM, LOM), deadline kontrolü (açık/kapalı) ve enerji muhasebesi (yalnızca kullanılan/tüm düğümlerin boşta gücü). Sugeno sabitleri çıktı kümelerinin tepe noktalarıdır (40/100/160); tek bir kural tam ateşlendiğinde iki sistem aynı değeri verir.</p>
+
+<h2>VII. Deney Düzeni</h2>
+<p><i>Yazılım:</i> Python 3.12, NumPy 2.2, SciPy 1.15, pandas 2.2, NetworkX 3.4, Matplotlib 3.10; scikit-fuzzy 0.5 yalnızca doğrulama için. Bağımlılıklar <code>requirements.txt</code>'te sabitlenmiştir. <i>Donanım:</i> Intel Core i7-12700H, 16 GB RAM, Windows 11; 300 işlik bir simülasyon ~40 ms sürer. <i>Veri:</i> tohumlu MONTAGE iş akışları (20, 40, 60, 80, 100, 200, 300 görev); görev uzunlukları gerçek MONTAGE izlerindeki tür ortalamalarına ±%20 sapmayla, süre payları U(1.2, 4) × referans süre (en fazla 50 s). <i>Tekrar:</i> 10 test tohumu (100–109); ayar tohumları (0–2) test sonuçlarında kullanılmamıştır. <i>İstatistik:</i> aynı iş akışı üzerinde eşli farklar; tek örneklem t-testi ve Wilcoxon işaretli sıra testi [18]. <i>Gürültü deneyi:</i> seviyeler 0, 0.05, 0.1, 0.2, 0.3; senaryolar <code>network</code> (nl, bw, vt) ve <code>all</code> (beş girdi); FOU 0.025, 0.05, 0.1, 0.2. Ana FOU (0.05), test tohumları koşulmadan önce ayar tohumlarında gürültüsüz QoS'i Tip-1'in ~%1'i içinde tutan en büyük değer olarak seçilmiştir. Toplam 113 birim test vardır; tüm sonuçlar tek komutla yeniden üretilir.</p>
+
+<h2>VIII. Sonuçlar</h2>
+<h3>A. Şekil 4'ün yeniden üretimi</h3>
+<p>Tablo VII ve Şekil 5, dengeli tercihte önerilen yöntemi klasik yöntemle karşılaştırır. Makespan ve maliyet kazancı yön olarak yeniden üretilmiş, enerji kazancı üretilememiştir.</p>
+
+<table>
+<caption>Tablo VII. Klasik yönteme göre iyileşme (70 eşli koşu; + = önerilen daha iyi)</caption>
+<tr><th class="l">Metrik</th><th>Bu çalışma</th><th>Kazanılan koşu</th><th>p (t-testi)</th><th>Makale</th></tr>
+<tr><td class="l">Makespan</td><td>+4.0 ± 4.2 %</td><td>%79</td><td>1.4e−11</td><td>+7.51 %</td></tr>
+<tr><td class="l">Enerji</td><td>−4.2 ± 9.0 %</td><td>%10</td><td>2.2e−4</td><td>+4.63 %</td></tr>
+<tr><td class="l">Maliyet</td><td>+21.9 ± 3.1 %</td><td>%100</td><td>6.2e−61</td><td>+13.60 %</td></tr>
+</table>
+
+</div>
+<figure class="wide">
+<img src="../results/figures/fig4_reproduction.png" alt="Şekil 4 yeniden üretimi">
+<figcaption>Şekil 5. Makalenin Şekil 4'ünün yeniden üretimi: (A–C) iş sayısına göre makespan, enerji ve maliyet (10 tohumun ortalaması ± std), (D) genel iyileşme, bu çalışma ve makale.</figcaption>
+</figure>
+<div class="cols">
+<p>Maliyet kazancının nedeni açıktır: önerilen yöntem işlerin %26'sını ücretsiz edge'e gönderir ve cloud payını %50'den %34'e indirir (100 iş); klasik yöntem edge'i hiç kullanmaz. Enerji kaybı ölçülerek ayrıştırılmıştır: önerilen yöntemin çalışma enerjisi %5 daha düşüktür (939 J'a karşı 990 J), ancak cloud düğümlerine az iş gönderdiği hâlde bu düğümler 1300 mW boşta güçle açık kalır (+114 J). Makale enerjiyi nasıl topladığını belirtmez. Ayrıca makalenin metindeki yüzdeleri (7.51/4.63/13.60) Şekil 4A–C çubuklarından hesaplanan değerlerle (14.9/9.7/19.5) örtüşmez.</p>
+
+<p>Tablo VIII'deki tek katmanlı referans politikalar ortamın ödünleşimini gösterir (100 iş): yalnızca edge 698 s / 870 J / 0 $, yalnızca fog 537 s / 766 J / 464 $, yalnızca cloud 436 s / 1366 J / 756 $. Fog, Tablo 3'teki en düşük güç/MIPS oranıyla (0.62) en verimli, cloud ise boşta 1300 mW harcadığı için en savurgan katmandır. Önerilen yöntem (300 s / 1406 J / 459 $) her tek katmanlı politikadan daha hızlıdır. Ancak kısıtsız MIN-MIN (her görevi tüm katmanlardaki en erken bitiren düğüme koyan, offloading kararı vermeyen zamanlayıcı) 242 s / 1169 J / 510 $ ile makespan ve enerjide hem önerilen hem klasik yöntemden iyidir. Katmanı önceden sabitleyen her iki aktarım yöntemi de zamanlayıcının seçim alanını daraltmaktadır; makalede böyle bir alt sınır karşılaştırması yoktur.</p>
+<table>
+<caption>Tablo VIII. Referans politikalar (100 iş, 10 tohum ortalaması)</caption>
+<tr><th class="l">Politika</th><th>Makespan (s)</th><th>Enerji (J)</th><th>Maliyet ($)</th><th>Kaçırma</th></tr>
+<tr><td class="l">Yalnızca edge</td><td>697.9</td><td>870</td><td>0</td><td>%50.8</td></tr>
+<tr><td class="l">Yalnızca fog</td><td>537.0</td><td>766</td><td>464</td><td>%41.8</td></tr>
+<tr><td class="l">Yalnızca cloud</td><td>436.2</td><td>1366</td><td>756</td><td>%35.7</td></tr>
+<tr><td class="l">Klasik iki yönlü [3]</td><td>317.0</td><td>1334</td><td>609</td><td>%27.4</td></tr>
+<tr><td class="l">Önerilen (dengeli)</td><td>300.2</td><td>1406</td><td>459</td><td>%22.0</td></tr>
+<tr><td class="l">MIN-MIN (tüm katmanlar)</td><td>241.5</td><td>1169</td><td>510</td><td>%20.9</td></tr>
+</table>
+<h3>B. Tablo 4 ve QoS–katman eşlemesi</h3>
+<p>Dengeli tercihten saf tercihe tarama yapıldığında (Tablo IX, Şekil 6) makalenin etiketleri kendi Tablo 3'üyle çelişir: saf maliyet tercihi (A2→cloud) maliyeti 459 $'dan 565 $'a <i>artırır</i>, saf zaman tercihi (A4→edge) makespan'ı 300 s'den 698 s'ye çıkarır, çünkü cloud en pahalı ama en hızlı, edge ücretsiz ama en yavaş katmandır. Fiziksel olarak tutarlı eşleme (maliyet→edge, zaman→cloud) ile beklenen eğilimler ortaya çıkar (zaman tercihi 284 s, maliyet tercihi 0 $). Makalenin Tablo 4'ünde ise cloud payı arttıkça maliyet 1361 $'dan 181 $'a düşmektedir.</p>
+
+<figure class="wide">
+<img src="../results/figures/table4_reproduction.png" alt="Tablo 4 yeniden üretimi">
+<figcaption>Şekil 6. Tablo 4'ün yeniden üretimi: dengeli tercihten (s=0) saf tercihe (s=1) tarama, 100 iş, 10 tohum. Makalenin eşlemesiyle maliyet tercihi maliyeti artırır, zaman tercihi makespan'ı en kötü hâle getirir.</figcaption>
+</figure>
+<table>
+<caption>Tablo IX. Saf QoS tercihlerinin etkisi: makale ile yeniden üretim (100 iş)</caption>
+<tr><th class="l">Tercih</th><th>Makale: eğilim (Tablo 4)</th><th>Yayımlanan eşleme</th><th>Fiziksel eşleme</th></tr>
+<tr><td class="l">Maliyet</td><td>cloud payı ↑, maliyet ↓</td><td>A2→Cloud: 565 $ (↑)</td><td>A2→Edge: 0 $</td></tr>
+<tr><td class="l">Zaman</td><td>fog payı ↑, makespan ↓</td><td>A4→Edge: 698 s (↑)</td><td>A4→Cloud: 284 s</td></tr>
+<tr><td class="l">Enerji</td><td>edge payı ↑, enerji ↓</td><td>A3→Fog: 1438 J</td><td>A3→Fog: 1438 J</td></tr>
+<tr><td class="l">Dengeli</td><td>—</td><td colspan="2">A5: 300 s, 1406 J, 459 $</td></tr>
+</table>
+<h3>C. IT2 ve gürültü dayanıklılığı</h3>
+<p>Tablo X ve Şekil 7, gürültü kaynaklı katman değişimlerini gösterir. Düşük gürültüde IT2, flip'lerin %13–18'ini anlamlı biçimde ortadan kaldırır ve κ hafifçe artar; büyük gürültüde fark kaybolur. Gürültüsüz durumda IT2 (FOU 0.05) ile Tip-1 arasında makespan, enerji ve maliyet farkı anlamsızdır (p&gt;0.16); deadline kaçırma 0.28 yüzde puan artar (p=0.006).</p>
+
+<table>
+<caption>Tablo X. Flip oranı ve κ, Tip-1 → IT2 (FOU 0.05), 50 eşli koşu</caption>
+<tr><th>Gürültü</th><th><code>network</code> flip</th><th>κ</th><th>p<sub>W</sub></th><th><code>all</code> flip</th><th>p<sub>W</sub></th></tr>
+<tr><td>0.05</td><td>8.0→<b>6.6</b> %</td><td>.81→.83</td><td><b>.002</b></td><td>11.6→<b>10.1</b> %</td><td><b>.014</b></td></tr>
+<tr><td>0.10</td><td>12.3→11.3 %</td><td>.70→.71</td><td>.13</td><td>18.1→16.9 %</td><td>.44</td></tr>
+<tr><td>0.20</td><td>19.7→19.2 %</td><td>.54→.53</td><td>.47</td><td>26.9→26.0 %</td><td>.43</td></tr>
+<tr><td>0.30</td><td>23.2→22.8 %</td><td>.45→.44</td><td>.50</td><td>30.7→30.1 %</td><td>.95</td></tr>
+</table>
+
+<table>
+<caption>Tablo XI. FOU genişliğinin gürültüsüz bedeli (20–300 iş, 10 tohum)</caption>
+<tr><th class="l">FIS</th><th>Makespan (s)</th><th>Maliyet ($)</th><th>FIS: Edge/Cloud</th><th>µs/karar</th></tr>
+<tr><td class="l">Tip-1</td><td>369.4</td><td>643.5</td><td>%19 / %5.3</td><td>47</td></tr>
+<tr><td class="l">IT2 0.05</td><td>369.0</td><td>643.0</td><td>%19 / %5.5</td><td>116</td></tr>
+<tr><td class="l">IT2 0.1</td><td>398.4</td><td>629.5</td><td>%16 / %1.4</td><td>136</td></tr>
+<tr><td class="l">IT2 0.2</td><td>404.3</td><td>649.8</td><td>%4 / %0</td><td>259</td></tr>
+</table>
+<p>FOU büyüdükçe KM aralığı genişler ve orta noktası evrenin ortasına (fog=100) kayar: FOU 0.2'de FIS hiç cloud demez, flip oranı %3–6'ya iner ama κ 0.1–0.5'e düşer ve makespan %9 kötüleşir. Bu kararlılık değil, kararsızlıktır.</p>
+</div>
+<figure class="wide">
+<img src="../results/figures/robustness_stability.png" alt="Kararlılık">
+<figcaption>Şekil 7. Gürültü seviyesine göre flip oranı, Cohen κ ve göreli crisp sapma; Tip-1 ve dört FOU genişliği, iki senaryo.</figcaption>
+</figure>
+<div class="cols">
+
+<p><i>Sistem düzeyinde dayanıklılık.</i> Beş girdinin hepsine 0.3 gürültü eklendiğinde Tip-1 kararlarının %31'i değişir, ama makespan yalnızca %3 artar (369→381 s) ve maliyet hatta düşer (643→626 $), çünkü deadline kontrolü ve MIN-MIN yanlış FIS katmanlarının çoğunu düzeltir (Şekil 8). Tip-1 ile IT2'nin uçtan uca metrikleri her seviyede %1 içinde kalır; birkaç eşli testte p&lt;0.05 görülse de farkın işareti seviyeden seviyeye değişir, dolayısıyla IT2'nin tutarlı bir QoS avantajı yoktur.</p>
+<figure class="wide">
+<img src="../results/figures/robustness_metrics.png" alt="Gürültü altında QoS">
+<figcaption>Şekil 8. Gürültü seviyesine göre makespan, enerji, maliyet ve deadline kaçırma (Tip-1, IT2 FOU'ları ve klasik yöntem; iki senaryo).</figcaption>
+</figure>
+<h3>D. Ablasyon</h3>
+<p>Tablo XII ve Şekil 9, her bileşenin tek başına değiştirilmesinin etkisini verir. Durulaştırma yöntemleri ve Sugeno sonuçları yalnızca %1–3 oynatır ve hiçbiri her metrikte COG'den üstün değildir. Sugeno, bisector ile neredeyse aynı kararları %40 daha kısa sürede verir. Deadline kontrolünün kaldırılması ise makespan'ı %50 kötüleştirir.</p>
+
+<table>
+<caption>Tablo XII. Ablasyon: Mamdani+COG'ye göre fark (+ = kötü; kalın: p<sub>W</sub>&lt;0.05)</caption>
+<tr><th class="l">Varyant</th><th>Makespan</th><th>Enerji</th><th>Maliyet</th><th>Kaçırma (pp)</th><th>µs</th></tr>
+<tr><td class="l">Bisector</td><td><b>−1.0</b></td><td>+3.2</td><td><b>−1.8</b></td><td><b>+1.0</b></td><td>65</td></tr>
+<tr><td class="l">MOM</td><td><b>−1.5</b></td><td><b>+2.9</b></td><td><b>−3.3</b></td><td><b>+1.3</b></td><td>60</td></tr>
+<tr><td class="l">SOM</td><td><b>+2.8</b></td><td><b>+3.7</b></td><td><b>−7.3</b></td><td><b>+0.8</b></td><td>52</td></tr>
+<tr><td class="l">LOM</td><td><b>−1.5</b></td><td><b>+1.3</b></td><td><b>+2.2</b></td><td><b>+1.7</b></td><td>54</td></tr>
+<tr><td class="l">Sugeno</td><td><b>−1.4</b></td><td>+3.8</td><td><b>−2.2</b></td><td>+0.5</td><td>30</td></tr>
+<tr><td class="l">IT2 0.05</td><td>0.0</td><td>0.0</td><td>+0.1</td><td>+0.2</td><td>162</td></tr>
+<tr><td class="l">Deadline kontrolü yok</td><td><b>+49.8</b></td><td>−19.0</td><td><b>−16.9</b></td><td><b>+17.9</b></td><td>—</td></tr>
+</table>
+<p>Kontrol kapalıyken FIS işlerin %71'ini fog'a, yalnızca %3'ünü cloud'a gönderir (kontrol açıkken %44/%30). Yani önerilen yöntemin cloud yerleştirmelerinin büyük kısmı FIS'ten değil, kesin "dl not met" kontrolünden gelir; kontrolsüz yöntem klasik yöntemden %43 daha yavaştır. Boşta gücü tüm düğümler için saymak enerji farkını −%4.2'den −%2.8'e küçültür ama işaretini değiştirmez.</p>
+<p>Gürültü deadline kontrolü kapalıyken uygulandığında (Şekil 10) makespan beklenenin aksine <i>düşer</i> (0.3 gürültüde %9.4): gürültü, fog'a yığılan kararların bir kısmını edge ve cloud'a dağıtır (200 işte cloud payı %5→%11); bedeli %20'ye varan enerji artışıdır. IT2 ile Tip-1 burada da %1 içinde kalır.</p>
+</div>
+<figure class="wide">
+<img src="../results/figures/ablation_variants.png" alt="Ablasyon">
+<figcaption>Şekil 9. Ablasyon: her varyantın Mamdani+COG'ye göre eşli farkı (20–300 iş, 10 tohum; * Wilcoxon p&lt;0.05).</figcaption>
+</figure>
+<div class="cols">
+
+<figure class="wide">
+<img src="../results/figures/ablation_noise_nodeadline.png" alt="Gürültü ve deadline kontrolü">
+<figcaption>Şekil 10. Deadline kontrolü açık (düz) ve kapalı (kesikli) iken gürültü seviyesine göre flip oranı, makespan ve deadline kaçırma değişimi; Tip-1 ve IT2 (FOU 0.05), gürültü beş girdide.</figcaption>
+</figure>
+<h2>IX. Tartışma</h2>
+<p><i>Yeniden üretim.</i> Simülatör, kural tabanı ve gözlem eşlemesi makaleden farklı olduğu hâlde makespan ve maliyet kazancının yönü yeniden üretilmiştir; bu, yöntemin ana fikrinin—edge'i ucuz bir üçüncü seçenek olarak kullanmanın—sağlam olduğunu gösterir. Enerji sonucunun işaretinin muhasebe biçimine ve boşta cloud gücüne bu kadar duyarlı olması, makalenin enerji modelini açıkça vermemesinin önemli bir eksiklik olduğunu gösterir.</p>
+<p><i>Bulanık sistemin payı.</i> Ablasyonun en önemli bulgusu, iyi sonucun büyük ölçüde kesin bir deadline kontrolünden gelmesidir. Bu, FIS'in değersiz olduğu anlamına gelmez: edge kullanımı ve maliyet kazancı FIS'e aittir. Ancak FIS dengeli tercihte belirgin biçimde fog'a eğilimlidir (rastgele girdilerde %84 fog). Bunun nedeni geniş "Medium" terimleri ve COG'nin geniş fog üçgeninin alanına doğru çekmesidir. Gürültünün kontrolsüz durumda makespan'ı iyileştirmesi de aynı eğilimin bir belirtisidir: gürültüsüz karar optimal değildir. Bu, kural tabanının ya da MF'lerin veriye dayalı ayarlanmasının (ör. GA/PSO, ANFIS) anlamlı bir sonraki adım olduğunu düşündürür.</p>
+<p><i>IT2'nin değeri.</i> IT2 düşük gürültüde karar kararlılığını küçük ama anlamlı biçimde artırmış, QoS'e zarar vermemiştir; bu, yöntemin "belirsizlik" motivasyonuyla uyumlu, ucuz bir iyileştirmedir. Ancak etki büyük gürültüde kaybolur ve geniş FOU sistemi orta katmana çökertir. FOU beklenen ölçüm hatasıyla orantılı seçilmelidir; bu sistemde ise geniş FOU ile karar keskinliği arasında açık bir ödünleşim vardır. Ayrıca flip sayısı tek başına iyi bir ölçüt değildir: temiz karar optimal değilse ondan sapmak zarar vermeyebilir. Bu nedenle κ ve sistem düzeyi metrikler birlikte raporlanmıştır.</p>
+<p><i>Hesaplama maliyeti.</i> IT2 karar başına ~2.5–3 kat yavaştır (≈0.1–0.16 ms), Sugeno ise Mamdani'den %40 hızlıdır. 300 işlik bir iş akışı için IT2'nin toplam ek süresi onlarca milisaniyedir; makalenin "düşük karmaşıklık" iddiası her üç sistem için de geçerlidir.</p>
+
+<p><i>Referans makalenin eleştirel değerlendirmesi.</i> Makalenin güçlü yönleri; açıklanabilir dilsel kurallar, kullanıcı tercihine duyarlı iki katmanlı yapı ve edge'in ucuz bir yürütme seçeneği olarak sisteme katılmasıdır. Yeniden üretim bu fikrin maliyet ve makespan açısından işe yaradığını doğrulamıştır. Zayıf yönler ise tekrar üretilebilirlikle ilgilidir: kod, kural tabanının tamamı ve MF değerleri paylaşılmamış; enerji modeli, deadline birimi ve λ eşikleri tanımsız bırakılmış; baseline başka bir simülatörden alınmış; sonuçlar tek koşu olarak, varyans ve anlamlılık testi olmadan raporlanmıştır. Metindeki yüzdeler makalenin kendi şekilleriyle örtüşmemekte, QoS–katman eşlemesi kendi Tablo 3'üyle çelişmektedir. Olası başarısızlık durumları da ablasyondan okunabilir: FIS'in fog'a eğilimli olması, deadline kontrolü olmayan ya da EFT tahminlerinin hatalı olduğu bir ortamda yöntemin klasik yöntemden belirgin biçimde kötü sonuç vermesine yol açabilir.</p>
+<p><i>Geçerliliğe yönelik tehditler.</i> Sonuçlar tek bir simülatör ve bizim tasarladığımız gözlem eşlemesiyle elde edilmiştir; ölçek sabitleri ve ana FOU, sonuçlara bakılmadan ayrı ayar tohumlarında sabitlenerek iyimser seçim yanlılığı azaltılmıştır. Çok sayıda eşli test yapıldığından tek tük p&lt;0.05 değerleri çoklu karşılaştırma etkisiyle yorumlanmalıdır; bu nedenle yalnızca seviyeler arasında tutarlı yöndeki etkiler sonuç olarak sunulmuştur. Yeniden üretilebilirlik için tüm deneyler sabit tohumlarla, tek komutla koşulur ve sonuç dosyaları kodla birlikte paylaşılmıştır; kod değişikliklerinden sonra Tip-1 sonuç dosyalarının bayt düzeyinde aynı kaldığı doğrulanmıştır.</p>
+<h2>X. Sınırlılıklar</h2>
+<ul>
+<li><b class="k">Simülatör farkı:</b> FogWorkflowSim yerine kendi simülatörümüz kullanılmıştır; mutlak değerler makaleyle doğrudan karşılaştırılamaz.</li>
+<li><b class="k">Yeniden kurulan bileşenler:</b> MF değerleri şekilden okunmuş, 243 kural yayımlanan üç kuralla tutarlı, belgelenmiş bir puanlama şemasıyla üretilmiş, gözlem eşlemesi ve ölçek sabitleri tarafımızca tasarlanmıştır. Farklı makul seçimler farklı sayılar verebilir.</li>
+<li><b class="k">Kapsam:</b> tek iş akışı tipi (MONTAGE), tek ortam (her katmanda iki düğüm), genişletme deneylerinde yalnızca dengeli QoS tercihi.</li>
+<li><b class="k">Gürültü modeli:</b> bağımsız Gauss gürültüsü yalnızca FIS girdilerinde; deadline kontrolünün bitiş tahminleri gürültüsüzdür. Gerçek ağ ölçümleri zamansal olarak ilişkili ve yanlı olabilir; sistem düzeyi dayanıklılık iyimser olabilir.</li>
+<li><b class="k">IT2 tasarımı:</b> tek bir FOU ailesi (belirsiz konum); çıktı FOU'su ve KM dışı tip indirgeme yöntemleri ana deneylerde kullanılmamıştır.</li>
+<li><b class="k">Etki büyüklüğü:</b> IT2'nin anlamlı faydası yalnızca düşük gürültüde flip oranındadır; tutarlı bir QoS iyileşmesi yoktur.</li>
+</ul>
+
+<h2>XI. Sonuç</h2>
+<p>Soni ve Kumar'ın [1] bulanık offloading yöntemi açık kaynaklı, test edilmiş ve tek komutla yeniden üretilebilir biçimde gerçekleştirilmiştir. Yeniden üretim, makespan ve maliyet kazancını doğrulamış, enerji kazancını doğrulayamamış ve makalenin QoS–katman eşlemesinin kendi parametreleriyle çeliştiğini göstermiştir. Önerilen IT2 genişletmesi makalenin sistemini tam olarak kapsar (<i>fou</i>=0), düşük gürültüde karar kararlılığını anlamlı biçimde artırır ve QoS'i korur. Ablasyon, yöntemin başarısında kesin deadline kontrolünün belirleyici olduğunu, durulaştırma ve çıkarım türü seçiminin ise ikincil olduğunu ortaya koymuştur. Gelecek çalışma olarak (i) kural tabanı ve MF'lerin GA/PSO ya da ANFIS ile optimize edilmesi, (ii) FOU'nun ölçülen gürültü düzeyine göre uyarlanması, (iii) zamansal olarak ilişkili ve yanlı gürültü modelleri ve (iv) diğer Pegasus iş akışları (CyberShake, LIGO, Epigenomics) önerilmektedir.</p>
+
+<h2>Kaynakça</h2>
+<div class="refs">
+<p>[1] D. Soni and N. Kumar, "Fuzzy logic-based computation offloading technique in fog computing," <i>Concurrency Computat. Pract. Exper.</i>, vol. 36, no. 20, p. e8198, 2024, doi: 10.1002/cpe.8198.</p>
+<p>[2] C. Sonmez, A. Ozgovde, and C. Ersoy, "Fuzzy workload orchestration for edge computing," <i>IEEE Trans. Netw. Serv. Manag.</i>, vol. 16, no. 2, pp. 769–782, 2019.</p>
+<p>[3] S. Khan, M. Abdullah, W. Iqbal, and M. Butt, "Efficient job placement using two-way offloading technique over fog-cloud architectures," <i>Cluster Computing</i>, vol. 26, pp. 3503–3521, 2023.</p>
+<p>[4] X. Liu, L. Fan, J. Xu, et al., "FogWorkflowSim: An automated simulation toolkit for workflow performance evaluation in fog computing," in <i>Proc. 34th IEEE/ACM ASE</i>, 2019, pp. 1114–1117.</p>
+<p>[5] N. Kumari, A. Yadav, and P. K. Jana, "Task offloading in fog computing: A survey of algorithms and optimization techniques," <i>Comput. Netw.</i>, vol. 214, p. 109137, 2022.</p>
+<p>[6] L. A. Zadeh, "Fuzzy sets," <i>Inf. Control</i>, vol. 8, no. 3, pp. 338–353, 1965.</p>
+<p>[7] E. H. Mamdani and S. Assilian, "An experiment in linguistic synthesis with a fuzzy logic controller," <i>Int. J. Man-Mach. Stud.</i>, vol. 7, no. 1, pp. 1–13, 1975.</p>
+<p>[8] T. Takagi and M. Sugeno, "Fuzzy identification of systems and its applications to modeling and control," <i>IEEE Trans. Syst., Man, Cybern.</i>, vol. SMC-15, no. 1, pp. 116–132, 1985.</p>
+<p>[9] N. N. Karnik and J. M. Mendel, "Centroid of a type-2 fuzzy set," <i>Inf. Sci.</i>, vol. 132, no. 1–4, pp. 195–220, 2001.</p>
+<p>[10] Q. Liang and J. M. Mendel, "Interval type-2 fuzzy logic systems: Theory and design," <i>IEEE Trans. Fuzzy Syst.</i>, vol. 8, no. 5, pp. 535–550, 2000.</p>
+<p>[11] J. M. Mendel and R. I. B. John, "Type-2 fuzzy sets made simple," <i>IEEE Trans. Fuzzy Syst.</i>, vol. 10, no. 2, pp. 117–127, 2002.</p>
+<p>[12] D. Wu and J. M. Mendel, "Enhanced Karnik–Mendel algorithms," <i>IEEE Trans. Fuzzy Syst.</i>, vol. 17, no. 4, pp. 923–934, 2009.</p>
+<p>[13] F. Bonomi, R. Milito, J. Zhu, and S. Addepalli, "Fog computing and its role in the Internet of Things," in <i>Proc. 1st MCC Workshop Mobile Cloud Comput.</i>, 2012, pp. 13–16.</p>
+<p>[14] P. Mach and Z. Becvar, "Mobile edge computing: A survey on architecture and computation offloading," <i>IEEE Commun. Surveys Tuts.</i>, vol. 19, no. 3, pp. 1628–1656, 2017.</p>
+<p>[15] T. D. Braun et al., "A comparison of eleven static heuristics for mapping a class of independent tasks onto heterogeneous distributed computing systems," <i>J. Parallel Distrib. Comput.</i>, vol. 61, no. 6, pp. 810–837, 2001.</p>
+<p>[16] E. Deelman et al., "Pegasus: A framework for mapping complex scientific workflows onto distributed systems," <i>Sci. Program.</i>, vol. 13, no. 3, pp. 219–237, 2005.</p>
+<p>[17] G. Juve, A. Chervenak, E. Deelman, S. Bharathi, G. Mehta, and K. Vahi, "Characterizing and profiling scientific workflows," <i>Future Gener. Comput. Syst.</i>, vol. 29, no. 3, pp. 682–692, 2013.</p>
+<p>[18] F. Wilcoxon, "Individual comparisons by ranking methods," <i>Biometrics Bull.</i>, vol. 1, no. 6, pp. 80–83, 1945.</p>
+<p>[19] J. Cohen, "A coefficient of agreement for nominal scales," <i>Educ. Psychol. Meas.</i>, vol. 20, no. 1, pp. 37–46, 1960.</p>
+</div>
+</div>
+</body>
+</html>

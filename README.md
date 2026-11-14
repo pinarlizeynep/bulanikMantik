@@ -1,8 +1,11 @@
 # Fuzzy Logic-Based Computation Offloading in Fog Computing — Reproduction & Type-2 Extension
 
-> Fuzzy Logic course term project. **Status: work in progress.**
+> Fuzzy Logic course term project. Technical report (Turkish): [`report/report.pdf`](report/report.pdf) ·
+> slides (Turkish): [`presentation/presentation.pdf`](presentation/presentation.pdf) · live demo: [`demo/demo.py`](demo/demo.py).
 
 ## Student Information
+- Name: Zeynep Pınarlı
+- Student ID: 1306220076
 - GitHub: [@pinarlizeynep](https://github.com/pinarlizeynep)
 - Course: Bulanık Mantık (Fuzzy Logic), Fall 2026
 
@@ -38,6 +41,29 @@ report/         technical report (PDF)
 presentation/   slides (PDF)
 references/     bibliography
 ```
+
+## Method
+Two fuzzy decision layers, as in the paper (Algorithms 1-5):
+1. **QoS selector** ([`qos_selector.py`](src/fuzzy/qos_selector.py)) — the user's time / energy / cost
+   preference in [0, 1]³ is fuzzified (Low / Medium / High) and the 16 rules of Table 2 select one of
+   A2 (cost), A3 (energy), A4 (time) or A5 (hybrid).
+2. **Offloading FIS** ([`paper_fis.py`](src/fuzzy/paper_fis.py)) — for A5, the simulator state is mapped to
+   five inputs (`observe` in [`fuzzy_policy.py`](src/policies/fuzzy_policy.py)), the 243-rule Mamdani FIS
+   returns a crisp value in [0, 200] and the thresholds 60 / 140 pick Edge / Fog / Cloud.
+3. **Offloading condition** — if the chosen layer would miss the task's deadline and another layer would
+   not ("dl not met", Alg. 5), the layer with the earliest expected finish is used.
+4. **MIN-MIN** places the task on the best node of the chosen layer.
+
+The extension replaces only step 2: interval type-2 FIS ([`it2.py`](src/fuzzy/it2.py)) or zero-order
+Sugeno FIS ([`sugeno.py`](src/fuzzy/sugeno.py)); everything else is shared.
+
+## Dataset
+No external dataset is needed. Workloads are **synthetic MONTAGE workflows** generated from a seed by
+[`src/workflow/montage.py`](src/workflow/montage.py) (structure of the Pegasus Montage workflow, task
+lengths close to the per-type means of real MONTAGE traces ±20 %, per-task deadline slack). Node
+parameters come from the paper's Table 3 ([`src/env/nodes.py`](src/env/nodes.py)). Seeds 0-2 were used
+only to calibrate input scales and the main FOU; all reported results use seeds 100-109. The values read
+off the paper's figures and tables for comparison are in [`data/`](data).
 
 ## Installation
 ```bash
@@ -86,7 +112,14 @@ python -m experiments.baseline.run_baseline
 python -m experiments.proposed.reproduce_fig4
 python -m experiments.proposed.reproduce_table4
 
-# unit tests (includes a cross-check against scikit-fuzzy)
+# extension: type-1 vs. interval type-2 under measurement noise (~2 min) and ablation (~1.5 min)
+python -m experiments.proposed.robustness_it2
+python -m experiments.proposed.ablation
+
+# interactive live demo (single decisions, a simulation, noise)
+python -m demo.demo
+
+# unit tests (113 tests, includes a cross-check against scikit-fuzzy; ~3 min)
 python -m pytest
 ```
 
@@ -197,17 +230,71 @@ runs ([`robustness_summary.csv`](results/tables/robustness_summary.csv),
   becomes uninformative and the noise-free makespan worsens by 9 %. FOU trades decisiveness for stability.
 - **System-level robustness comes mostly from the deadline check:** with noise of 0.3 on all inputs the
   type-1 policy's makespan rises only 3 % (369 → 381 s), because Alg. 5's "dl not met" check and MIN-MIN
-  correct many wrong FIS layers. End-to-end metrics of T1 and IT2 do not differ significantly at any
-  noise level (|Δ| < 1 %, except energy whose seed-to-seed std is large).
+  correct many wrong FIS layers. End-to-end metrics of T1 and IT2 stay within 1 % of each other at every
+  noise level; a few paired tests reach p < 0.05, but with changing sign (e.g. makespan with noise on all
+  inputs: IT2 0.8 % worse at 0.2, 0.6 % better at 0.3), so IT2 has no consistent QoS advantage.
 
 ![Robustness: decision stability](results/figures/robustness_stability.png)
 ![Robustness: QoS metrics](results/figures/robustness_metrics.png)
 
 Details, statistics and limitations (in Turkish): [`docs/gunluk/gun5_2026-11-11.md`](docs/gunluk/gun5_2026-11-11.md).
 
+### Ablation study
+One component of the proposed policy is changed at a time (balanced QoS, MONTAGE 20-300 jobs, seeds
+100-109, paired against the paper's Mamdani + centroid; [`ablation.py`](experiments/proposed/ablation.py),
+zero-order Sugeno FIS in [`src/fuzzy/sugeno.py`](src/fuzzy/sugeno.py)):
+
+```bash
+python -m experiments.proposed.ablation        # ~1.5 min
+python -m src.fuzzy.paper_fis --jl 10 --vt 50 --nl 25 --bw 3 --dl 8 --sugeno
+```
+
+| Variant | Makespan | Energy | Cost | Deadline misses | FIS layer = paper's (random inputs) | µs / decision |
+|---|---|---|---|---|---|---|
+| Mamdani + centroid (paper) | 0 | 0 | 0 | 0 | 100 % | 51 |
+| Mamdani + bisector | **−1.0 %** | +3.2 % | **−1.8 %** | **+1.0 pp** | 93 % | 65 |
+| Mamdani + MOM | **−1.5 %** | **+2.9 %** | **−3.3 %** | **+1.3 pp** | 81 % | 60 |
+| Mamdani + SOM | **+2.8 %** | **+3.7 %** | **−7.3 %** | **+0.8 pp** | 80 % | 52 |
+| Mamdani + LOM | **−1.5 %** | **+1.3 %** | **+2.2 %** | **+1.7 pp** | 79 % | 54 |
+| Sugeno (zero-order) | **−1.4 %** | +3.8 % | **−2.2 %** | +0.5 pp | 93 % | **30** |
+| IT2 (FOU 0.05) | +0.0 % | +0.0 % | +0.1 % | +0.2 pp | 98 % | 162 |
+| No deadline check | **+49.8 %** | −19.0 % | **−16.9 %** | **+17.9 pp** | — | — |
+
+(positive = worse than the paper's configuration; bold = Wilcoxon p < 0.05;
+[`ablation_summary.csv`](results/tables/ablation_summary.csv), [`ablation_fis.csv`](results/tables/ablation_fis.csv))
+
+- **Defuzzification / Sugeno:** no variant dominates the paper's centroid; each trades ~1-3 % makespan
+  or cost against energy and deadline misses. Among the type-1 systems the centroid is the most
+  "conservative" output (smallest spread, most Fog). Sugeno gives nearly the same decisions as the bisector at 40 % less time per
+  decision — it would support the paper's "low complexity" claim even better.
+- **The deadline check is the most important component.** Without it the FIS alone sends 71 % of the
+  jobs to the fog and only 3 % to the cloud, the makespan grows by 50 % and the method becomes 43 %
+  *worse* than the classical baseline. Most cloud placements of the proposed method come from the
+  "dl not met" check of Alg. 5, not from the FIS.
+- **Noise without the deadline check** ([`ablation_noise_nodeadline.csv`](results/tables/ablation_noise_nodeadline.csv)):
+  flips do *not* hurt — noise spreads jobs from the crowded fog to edge and cloud, so the makespan even
+  falls by up to 9 %. IT2 and T1 again stay within 1 %. The Day-5 hypothesis that flips would reach the
+  QoS metrics without the check is therefore rejected for this setting.
+- **Energy accounting:** counting idle power of *all* nodes instead of only the used ones changes the
+  energy result of Fig. 4 from −4.2 % to −2.8 % (proposed still worse than the baseline in 80 % of the runs;
+  [`ablation_idle.csv`](results/tables/ablation_idle.csv)).
+
+![Ablation](results/figures/ablation_variants.png)
+![Noise without the deadline check](results/figures/ablation_noise_nodeadline.png)
 
 ## Limitations
-_To be added._
+- **Not the paper's simulator.** FogWorkflowSim and the exact setup were not published; our Python
+  simulator follows Table 3 and the equations of the paper, but absolute numbers are not comparable.
+- **Unpublished parts were reconstructed:** numeric MF parameters (read off Fig. 3), 242 of the 243
+  rules (generated with a documented scoring scheme that reproduces the three published rules), the
+  mapping from simulator state to FIS inputs, and the λ thresholds of Alg. 5.
+- **Reproduction gap:** we reproduce the makespan gain (+4.0 % vs. 7.5 % in the paper) but not the energy
+  (−4.2 % vs. +4.6 %) and the cost (+21.9 % vs. +13.6 %) numbers exactly, and the published QoS-to-layer
+  mapping of Table 2 contradicts the paper's own Table 3 (see `docs/makale_analizi.md`).
+- **One workflow type** (MONTAGE), one environment (Table 3), balanced QoS for the extension experiments.
+- **Noise model:** independent Gaussian noise on the FIS inputs only; the deadline check uses exact
+  estimates, which makes the system-level robustness optimistic.
+- **IT2 benefit is small:** significant only for the flip rate at low noise; no consistent QoS gain.
 
 ## References
 See [`references/README.md`](references/README.md).
