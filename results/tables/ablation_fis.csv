@@ -1,0 +1,8 @@
+variant,agreement_with_paper,share_Edge,share_Fog,share_Cloud,crisp_std,us_per_decision
+Mamdani-COG (paper),1.0,0.1513,0.8357,0.013,24.2267,50.6685
+Mamdani-bisector,0.928,0.2017,0.7637,0.0347,26.5472,64.8724
+Mamdani-MOM,0.8063,0.281,0.642,0.077,33.8269,59.6813
+Mamdani-SOM,0.8013,0.3287,0.6443,0.027,32.4275,51.8447
+Mamdani-LOM,0.794,0.1193,0.7597,0.121,37.6778,54.2372
+Sugeno (zero-order),0.925,0.2097,0.764,0.0263,26.3608,30.2831
+IT2 FOU=0.05,0.9813,0.1517,0.8337,0.0147,23.1547,162.0429
