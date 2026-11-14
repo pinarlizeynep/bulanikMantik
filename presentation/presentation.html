@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<title>Bulanık Offloading Sunumu</title>
+<style>
+  @page { size: 254mm 142.9mm; margin: 0; }
+  :root { --ink: #1b2430; --muted: #5b6675; --accent: #1f5fa8; --accent2: #c0392b; --bg: #ffffff; --soft: #eef3f9; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Segoe UI", Calibri, Arial, sans-serif; color: var(--ink); background: #888; }
+  .slide { width: 254mm; height: 142.9mm; background: var(--bg); position: relative; overflow: hidden; padding: 11mm 14mm 9mm; page-break-after: always; break-after: page; margin: 0 auto 6mm; }
+  @media print { body { background: none; } .slide { margin: 0; } }
+  h1 { font-size: 21pt; margin: 0 0 5mm; color: var(--accent); font-weight: 600; letter-spacing: -0.2pt; }
+  h1 small { font-size: 12pt; color: var(--muted); font-weight: 400; margin-left: 3mm; }
+  h2 { font-size: 13pt; margin: 0 0 2mm; color: var(--ink); }
+  p, li { font-size: 12.5pt; line-height: 1.38; margin: 0 0 1.6mm; }
+  ul { margin: 0; padding-left: 5.5mm; }
+  li::marker { color: var(--accent); }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 8mm; }
+  .cols3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6mm; }
+  .wide-left { grid-template-columns: 1.25fr 1fr; }
+  .wide-right { grid-template-columns: 1fr 1.45fr; }
+  img { max-width: 100%; display: block; }
+  .center { display: flex; justify-content: center; }
+  .box { background: var(--soft); border-left: 3pt solid var(--accent); padding: 3mm 4mm; border-radius: 2mm; }
+  .box.red { border-left-color: var(--accent2); background: #fbefed; }
+  .key { font-size: 14pt; font-weight: 600; }
+  .big { font-size: 30pt; font-weight: 700; color: var(--accent); line-height: 1.1; }
+  .big.red { color: var(--accent2); }
+  .muted { color: var(--muted); font-size: 10.5pt; }
+  table { border-collapse: collapse; width: 100%; font-size: 11pt; }
+  th, td { padding: 1.4mm 2.2mm; border-bottom: 0.6pt solid #c9d2dd; text-align: center; }
+  th { color: var(--accent); border-bottom: 1.2pt solid var(--accent); }
+  td.l, th.l { text-align: left; }
+  .footer { position: absolute; left: 14mm; right: 14mm; bottom: 4mm; font-size: 8.5pt; color: var(--muted); display: flex; justify-content: space-between; }
+  .title-slide { display: flex; flex-direction: column; justify-content: center; background: linear-gradient(135deg, #f3f7fc 0%, #e3ecf7 100%); }
+  .title-slide h1 { font-size: 27pt; line-height: 1.2; margin-bottom: 4mm; }
+  code { font-family: Consolas, monospace; font-size: 10.5pt; background: #f1f3f6; padding: 0 1mm; border-radius: 1mm; }
+  .pipe { display: flex; align-items: stretch; gap: 2.5mm; margin: 3mm 0 5mm; }
+  .pipe div { flex: 1; background: var(--soft); border-radius: 2mm; padding: 2.5mm; font-size: 10.5pt; text-align: center; border-top: 2.5pt solid var(--accent); }
+  .pipe div.ext { border-top-color: var(--accent2); background: #fbefed; }
+  .pipe b { display: block; font-size: 11.5pt; margin-bottom: 1mm; }
+  .tag { display: inline-block; font-size: 9pt; padding: 0.4mm 2mm; border-radius: 3mm; background: var(--accent); color: #fff; margin-right: 1.5mm; }
+  .tag.red { background: var(--accent2); }
+</style>
+</head>
+<body>
+
+<!-- 1 -->
+<section class="slide title-slide">
+  <h1>Sis Bilişimde Bulanık Mantık Tabanlı<br>Hesaplama Aktarımı</h1>
+  <p class="key" style="color:#334">Yeniden üretim · Aralık Tip-2 genişletmesi · Ablasyon</p>
+  <p style="margin-top:6mm">Referans: D. Soni, N. Kumar, <i>Concurrency and Computation: Practice and Experience</i>, 36(20), e8198, 2024</p>
+  <p class="muted" style="margin-top:8mm">Zeynep Pınarlı — 1306220076 · Bulanık Mantık Dersi Dönem Projesi · Güz 2026<br>github.com/pinarlizeynep/bulanikMantik</p>
+</section>
+
+<!-- 2 -->
+<section class="slide">
+  <h1>Problem ve motivasyon</h1>
+  <div class="cols wide-left">
+    <div>
+      <p>IoT cihazları kendi kapasitelerini aşan iş akışları üretir. Her iş <b>nerede</b> çalışmalı?</p>
+      <table style="margin:3mm 0 4mm">
+        <tr><th class="l">Katman</th><th>İşlemci</th><th>Bağlantı</th><th>Fiyat</th><th>Boşta güç</th></tr>
+        <tr><td class="l">Edge</td><td>en yavaş</td><td>en hızlı</td><td>bedava</td><td>30 mW</td></tr>
+        <tr><td class="l">Fog</td><td>orta</td><td>orta</td><td>orta</td><td>40 mW</td></tr>
+        <tr><td class="l">Cloud</td><td>en hızlı</td><td>en yavaş</td><td>pahalı</td><td>1300 mW</td></tr>
+      </table>
+      <ul>
+        <li>Karar <b>makespan, enerji ve maliyeti</b> birlikte belirler.</li>
+        <li>Yük, gecikme, bant genişliği <b>sürekli değişir</b>, ancak gürültülü ölçülür.</li>
+        <li>Kesin optimizasyon pahalı; meta-sezgiseller parametre ayarı ister.</li>
+      </ul>
+    </div>
+    <div class="box">
+      <h2>Neden bulanık mantık?</h2>
+      <ul>
+        <li>"Gecikme <i>yüksek</i> ve deadline <i>sıkı</i> ise işi yakında tut" gibi <b>dilsel kurallar</b></li>
+        <li>Karar başına ~50 µs: <b>ucuz</b></li>
+        <li><b>Açıklanabilir</b>: hangi kural, ne kadar ateşlendi</li>
+        <li>Kesin eşik yerine <b>yumuşak geçiş</b></li>
+      </ul>
+      <p class="muted" style="margin-top:3mm">Uygulama alanı: akıllı şehir, sağlık izleme, endüstriyel IoT, bilimsel iş akışları</p>
+    </div>
+  </div>
+  <div class="footer"><span>Problem ve motivasyon</span><span>2</span></div>
+</section>
+
+<!-- 3 -->
+<section class="slide">
+  <h1>Literatür</h1>
+  <table style="font-size:10pt">
+    <tr><th class="l">Çalışma</th><th>Katmanlar</th><th>Karar yöntemi</th><th>Ölçüm belirsizliği</th><th class="l">Not</th></tr>
+    <tr><td class="l">Bonomi vd. 2012</td><td>—</td><td>—</td><td>—</td><td class="l">Fog bilişim kavramı</td></tr>
+    <tr><td class="l">Mach &amp; Becvar 2017</td><td>Edge–Cloud</td><td>tarama makalesi</td><td>—</td><td class="l">Gecikme–enerji ödünleşimi</td></tr>
+    <tr><td class="l">Sonmez vd. 2019</td><td>Edge–Cloud</td><td>T1 Mamdani</td><td>modellenmemiş</td><td class="l">En yakın öncül: bulanık iş yükü düzenleme</td></tr>
+    <tr><td class="l">Khan vd. 2023</td><td>Fog–Cloud</td><td>kesin kurallar</td><td>modellenmemiş</td><td class="l">Makalenin baseline'ı</td></tr>
+    <tr><td class="l"><b>Soni &amp; Kumar 2024</b></td><td>Edge–Fog–Cloud</td><td>T1 Mamdani + QoS FIS</td><td>modellenmemiş</td><td class="l">Referans makale</td></tr>
+    <tr><td class="l">Liang &amp; Mendel 2000; Karnik &amp; Mendel 2001</td><td>—</td><td>IT2 FLS, KM</td><td>FOU</td><td class="l">Tip-2 teorisi</td></tr>
+    <tr style="background:#fbefed"><td class="l"><b>Bu çalışma</b></td><td>Edge–Fog–Cloud</td><td>T1, IT2, Sugeno</td><td>IT2 + gürültü deneyi</td><td class="l">10 tohum, eşli testler</td></tr>
+  </table>
+  <div class="box" style="margin-top:3mm; padding:2mm 4mm"><b>Boşluk:</b> Üç katmanlı bulanık offloading, motivasyonu "belirsizlik" olduğu hâlde ölçüm belirsizliği altında hiç test edilmemiş.</div>
+  <div class="footer"><span>Literatür</span><span>3</span></div>
+</section>
+
+<!-- 4 -->
+<section class="slide">
+  <h1>Teorik altyapı <small>Tip-1 bulanık çıkarım</small></h1>
+  <div class="cols wide-right">
+    <div>
+      <ul>
+        <li><b>Bulanık küme:</b> μ<sub>A</sub>(x) ∈ [0,1] (Zadeh 1965)</li>
+        <li><b>Dilsel değişken:</b> "gecikme" = {Low, Average, High}</li>
+        <li><b>MF:</b> üçgen, yamuk, omuz</li>
+        <li><b>Mamdani:</b> AND = min → kırpma (min) → birleştirme (max) → durulaştırma</li>
+        <li><b>Durulaştırma:</b> COG = ∫yμ / ∫μ; bisector; MOM / SOM / LOM</li>
+        <li><b>Sugeno (0. derece):</b> sonuç sabit z<sub>i</sub>, y = Σ w<sub>i</sub>z<sub>i</sub> / Σ w<sub>i</sub>, integral yok</li>
+      </ul>
+    </div>
+    <div class="center"><img src="../results/figures/membership_functions.png" style="height:105mm"></div>
+  </div>
+  <div class="footer"><span>Teorik altyapı · MF'ler makalenin Şekil 3'ünden okundu</span><span>4</span></div>
+</section>
+
+<!-- 5 -->
+<section class="slide">
+  <h1>Teorik altyapı <small>Aralık Tip-2 (IT2)</small></h1>
+  <div class="cols wide-right">
+    <div>
+      <ul>
+        <li>Üyelik derecesi bir <b>aralık</b>: [μ̲(x), μ̄(x)]</li>
+        <li>Aradaki bant: <b>FOU</b> (belirsizlik ayak izi)</li>
+        <li>Kural ateşlemesi de aralık: [f̲<sub>i</sub>, f̄<sub>i</sub>]</li>
+        <li><b>Tip indirgeme</b>: IT2 kümenin ağırlık merkezi bir aralık [y<sub>l</sub>, y<sub>r</sub>] → <b>Karnik-Mendel</b> algoritması</li>
+        <li>Crisp çıktı = (y<sub>l</sub> + y<sub>r</sub>) / 2</li>
+      </ul>
+      <div class="box" style="margin-top:4mm">
+        <b>Bizim FOU'muz — "belirsiz konum":</b><br>
+        μ̄(x) = max μ(z), μ̲(x) = min μ(z), z ∈ [x−δ, x+δ]<br>
+        <span class="muted">Tek parametre, kapalı form; fou = 0 → makalenin sistemi</span>
+      </div>
+    </div>
+    <div class="center"><img src="../results/figures/it2_membership_functions.png" style="width:100%; margin-top:6mm"></div>
+  </div>
+  <div class="footer"><span>Teorik altyapı · Liang &amp; Mendel 2000, Karnik &amp; Mendel 2001</span><span>5</span></div>
+</section>
+
+<!-- 6 -->
+<section class="slide">
+  <h1>Referans yöntem ve sistem mimarisi</h1>
+  <div class="pipe">
+    <div><b>İş akışı</b>MONTAGE DAG<br>20–300 iş</div>
+    <div><b>QoS seçici</b>T, E, C → 16 kural<br>A2 / A3 / A4 / A5</div>
+    <div class="ext"><b>5 girdili FIS</b>jl, vt, nl, bw, dl<br>243 kural → [0, 200]</div>
+    <div><b>Eşikler</b>&lt;60 Edge<br>60–140 Fog, &gt;140 Cloud</div>
+    <div><b>Deadline kontrolü</b>"dl not met"<br>→ en erken bitiren</div>
+    <div><b>MIN-MIN</b>katman içinde<br>düğüm seçimi</div>
+  </div>
+  <div class="cols">
+    <div>
+      <h2>Makalenin vermedikleri — bizim kararlarımız</h2>
+      <ul>
+        <li><b>MF değerleri</b>: Şekil 3'ten okundu</li>
+        <li><b>243 kural</b> (yalnızca 3 örnek var): terim puanlama şeması, yayımlanan 3 kuralı birebir üretiyor</li>
+        <li><b>Girdilerin ölçümü</b>: simülatör durumundan min-max ölçekleme</li>
+        <li><b>Simülatör</b>: FogWorkflowSim yerine Python, Tablo 3 parametreleri</li>
+      </ul>
+    </div>
+    <div>
+      <h2>Örnek kural ateşlemesi</h2>
+      <p style="font-family:Consolas,monospace; font-size:9.5pt; line-height:1.35; background:#f6f8fa; padding:2.5mm; border-radius:2mm">jl=10 vt=50 nl=25 bw=3 dl=8<br>jl: Small 0.75 · nl: Average 0.38, High 0.62<br>[0.62] IF jl Small ∧ vt Poor ∧ nl High<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;∧ bw Low ∧ dl Low THEN Edge<br>8/243 kural ateşlendi → COG = 40 → <b>Edge</b></p>
+    </div>
+  </div>
+  <div class="footer"><span>Kırmızı kutu: genişletmede değiştirilen tek bileşen</span><span>6</span></div>
+</section>
+
+<!-- 7 -->
+<section class="slide">
+  <h1>Deney düzeni</h1>
+  <div class="cols">
+    <div>
+      <ul>
+        <li><b>Veri:</b> tohumlu MONTAGE iş akışları, 20 / 40 / 60 / 80 / 100 / 200 / 300 görev (Pegasus yapısı)</li>
+        <li><b>Ortam:</b> makalenin Tablo 3'ü, katman başına 2 düğüm</li>
+        <li><b>Karşılaştırılan:</b> klasik iki yönlü fog–cloud (Khan vd.) — <b>aynı simülatörde</b></li>
+        <li><b>Metrikler:</b> makespan, enerji, maliyet, deadline kaçırma, katman payları, karar süresi</li>
+        <li><b>Tekrar:</b> 10 test tohumu (100–109); ayar yalnızca 0–2 tohumlarında</li>
+        <li><b>İstatistik:</b> eşli t-testi, Wilcoxon, Cohen κ</li>
+      </ul>
+    </div>
+    <div>
+      <div class="box">
+        <h2>Makaleye göre farkımız</h2>
+        <ul>
+          <li>Makale: tek koşu, varyans yok, baseline başka simülatörden</li>
+          <li>Biz: 10 tekrar ± std, eşli test, adil baseline</li>
+          <li>Python 3.12, 113 birim test, her sonuç tek komutla yeniden üretilir</li>
+        </ul>
+      </div>
+      <p class="muted" style="margin-top:4mm">Intel i7-12700H · 300 işlik simülasyon ≈ 40 ms</p>
+    </div>
+  </div>
+  <div class="footer"><span>Deney düzeni</span><span>7</span></div>
+</section>
+
+<!-- 8 -->
+<section class="slide">
+  <h1>Sonuç 1 — Şekil 4'ün yeniden üretimi</h1>
+  <div class="cols wide-right">
+    <div>
+      <table>
+        <tr><th class="l">Metrik</th><th>Bu çalışma</th><th>Makale</th></tr>
+        <tr><td class="l">Makespan</td><td><b>+4.0 %</b></td><td>+7.51 %</td></tr>
+        <tr><td class="l">Enerji</td><td style="color:#c0392b"><b>−4.2 %</b></td><td>+4.63 %</td></tr>
+        <tr><td class="l">Maliyet</td><td><b>+21.9 %</b></td><td>+13.60 %</td></tr>
+      </table>
+      <p class="muted">+ = önerilen daha iyi; 70 eşli koşu, hepsi p &lt; 0.001</p>
+      <ul style="margin-top:3mm">
+        <li><b>Maliyet:</b> işlerin %26'sı bedava Edge'e</li>
+        <li><b>Enerji neden kötü?</b> Çalışma enerjisi %5 <i>az</i>, ama az kullanılan Cloud düğümleri boşta 1300 mW harcıyor</li>
+        <li>Makalenin metindeki yüzdeleri kendi şekilleriyle örtüşmüyor (14.9 / 9.7 / 19.5)</li>
+      </ul>
+    </div>
+    <div class="center"><img src="../results/figures/fig4_reproduction.png" style="height:112mm"></div>
+  </div>
+  <div class="footer"><span>Yeniden üretim · reproduce_fig4.py</span><span>8</span></div>
+</section>
+
+<!-- 9 -->
+<section class="slide">
+  <h1>Sonuç 2 — Tablo 4: makalenin iç çelişkisi</h1>
+  <div class="cols wide-left">
+    <div class="center"><img src="../results/figures/table4_reproduction.png" style="width:100%"></div>
+    <div>
+      <p>Makale: maliyet → <b>Cloud</b>, zaman → <b>Edge</b>. Ama makalenin kendi Tablo 3'üne göre Cloud en pahalı, Edge en yavaş.</p>
+      <table style="margin:3mm 0">
+        <tr><th class="l">Saf tercih</th><th>Makale eşlemesi</th><th>Fiziksel</th></tr>
+        <tr><td class="l">Maliyet</td><td style="color:#c0392b">565 $ ↑</td><td>0 $</td></tr>
+        <tr><td class="l">Zaman</td><td style="color:#c0392b">698 s ↑</td><td>284 s</td></tr>
+      </table>
+      <div class="box red"><b>Sorun uygulamada değil, etiketlerde.</b> Etiketler fiziksel olarak düzeltilince beklenen eğilim çıkıyor.</div>
+    </div>
+  </div>
+  <div class="footer"><span>Yeniden üretim · reproduce_table4.py</span><span>9</span></div>
+</section>
+
+<!-- 10 -->
+<section class="slide">
+  <h1>Özgün katkı 1 — IT2 ve gürültü dayanıklılığı</h1>
+  <div class="cols wide-right">
+    <div>
+      <p><b>Soru:</b> Ölçümler gürültülüyken IT2 kararları daha kararlı kılar mı?</p>
+      <ul>
+        <li>Girdilere Gauss gürültüsü, std = seviye × evren</li>
+        <li><b>Flip</b> = gürültülü karar ≠ temiz karar, <i>aynı simülatör durumunda</i></li>
+      </ul>
+      <table style="margin-top:3mm">
+        <tr><th>Gürültü</th><th>Flip T1 → IT2</th><th>p</th></tr>
+        <tr><td>0.05</td><td><b>8.0 → 6.6 %</b></td><td><b>0.002</b></td></tr>
+        <tr><td>0.10</td><td>12.3 → 11.3 %</td><td>0.13</td></tr>
+        <tr><td>0.30</td><td>23.2 → 22.8 %</td><td>0.50</td></tr>
+      </table>
+      <p class="muted">network senaryosu, FOU 0.05, 50 eşli koşu</p>
+    </div>
+    <div class="center"><img src="../results/figures/robustness_stability.png" style="width:100%; margin-top:2mm"></div>
+  </div>
+  <div class="footer"><span>Özgün katkı · robustness_it2.py</span><span>10</span></div>
+</section>
+
+<!-- 11 -->
+<section class="slide">
+  <h1>Özgün katkı 1 — FOU'nun bedeli</h1>
+  <div class="cols">
+    <div>
+      <table>
+        <tr><th class="l">FIS</th><th>Makespan</th><th>FIS: Edge / Cloud</th><th>µs</th></tr>
+        <tr><td class="l">Tip-1</td><td>369 s</td><td>%19 / %5.3</td><td>47</td></tr>
+        <tr><td class="l"><b>IT2 0.05</b></td><td><b>369 s</b></td><td>%19 / %5.5</td><td>116</td></tr>
+        <tr><td class="l">IT2 0.1</td><td>398 s</td><td>%16 / %1.4</td><td>136</td></tr>
+        <tr><td class="l">IT2 0.2</td><td style="color:#c0392b">404 s</td><td style="color:#c0392b">%4 / %0</td><td>259</td></tr>
+      </table>
+      <div class="box red" style="margin-top:4mm"><b>Az flip ≠ iyi karar.</b> FOU 0.2 kararların neredeyse hepsini Fog'a topluyor: flip %3–6 ama κ 0.1–0.5. Kararlılık değil, kararsızlık.</div>
+    </div>
+    <div>
+      <h2>Sonuç</h2>
+      <ul>
+        <li>FOU 0.05: düşük gürültüde flip'lerin %13–18'i yok, QoS <b>değişmiyor</b></li>
+        <li>Büyük gürültüde fayda yok: ±%5 FOU, ±%30 hatayı temsil edemez</li>
+        <li>Sistem düzeyinde Tip-1 de dayanıklı: 0.3 gürültüde kararların %31'i değişiyor, makespan yalnızca %3 artıyor</li>
+        <li>IT2 ~2.5 kat yavaş, ama hâlâ 0.1 ms</li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer"><span>Özgün katkı · FOU ana değeri test tohumlarından önce seçildi</span><span>11</span></div>
+</section>
+
+<!-- 12 -->
+<section class="slide">
+  <h1>Özgün katkı 2 — Ablasyon</h1>
+  <div class="center"><img src="../results/figures/ablation_variants.png" style="width:100%"></div>
+  <div class="cols" style="margin-top:3mm">
+    <div>
+      <ul>
+        <li>Durulaştırma ve Sugeno: <b>±%1–3</b>, hiçbiri COG'den her metrikte üstün değil</li>
+        <li>Sugeno: bisector'a yakın kararlar, <b>%40 daha hızlı</b> (30 µs)</li>
+      </ul>
+    </div>
+    <div class="box red">
+      <b>Deadline kontrolü kapatılınca:</b> makespan <b>+%50</b>, Cloud payı %30 → %3, yöntem klasikten %43 kötü. Başarının taşıyıcısı FIS değil, kesin "dl not met" kontrolü.
+    </div>
+  </div>
+  <div class="footer"><span>Özgün katkı · ablation.py</span><span>12</span></div>
+</section>
+
+<!-- 13 -->
+<section class="slide">
+  <h1>Beklenmeyen bulgu — gürültü yardım edebilir</h1>
+  <div class="center"><img src="../results/figures/ablation_noise_nodeadline.png" style="width:100%"></div>
+  <div class="cols" style="margin-top:3mm">
+    <div>
+      <p>Hipotez: deadline kontrolü olmasa flip'ler QoS'i bozar. <b>Reddedildi.</b></p>
+      <p>Kontrol kapalıyken gürültü makespan'ı <b>%9 iyileştiriyor</b>.</p>
+    </div>
+    <div class="box">
+      Neden? Gürültüsüz FIS işleri Fog'a yığıyor (%71). Gürültü yükü Edge ve Cloud'a dağıtıyor. Yani <b>temiz karar optimal değil</b>: kural tabanı ve MF'ler iyileştirilebilir.
+    </div>
+  </div>
+  <div class="footer"><span>Özgün katkı · ablation.py</span><span>13</span></div>
+</section>
+
+<!-- 14 -->
+<section class="slide">
+  <h1>Eleştirel değerlendirme</h1>
+  <div class="cols3">
+    <div>
+      <h2 style="color:#1f7a3a">Güçlü yönler</h2>
+      <ul>
+        <li>Açıklanabilir, dilsel kurallar</li>
+        <li>Kullanıcı tercihine duyarlı iki katman</li>
+        <li>Edge'i ucuz seçenek olarak katması → maliyet kazancı doğrulandı</li>
+        <li>Düşük karmaşıklık doğrulandı</li>
+      </ul>
+    </div>
+    <div>
+      <h2 style="color:#c0392b">Zayıf yönler</h2>
+      <ul>
+        <li>Kod, 243 kural, MF değerleri yok</li>
+        <li>Enerji modeli, deadline birimi, λ eşikleri tanımsız</li>
+        <li>Baseline başka simülatörden; tekrar ve test yok</li>
+        <li>QoS eşlemesi Tablo 3 ile çelişiyor</li>
+      </ul>
+    </div>
+    <div>
+      <h2 style="color:#b7791f">Olası başarısızlıklar</h2>
+      <ul>
+        <li>Deadline kontrolü / EFT tahmini yoksa: klasikten kötü</li>
+        <li>FIS Fog'a eğilimli (rastgele girdide %84 Fog)</li>
+        <li>Geniş FOU: karar ortaya çöker</li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer"><span>Sınırlılıklar ve geliştirmeler</span><span>14</span></div>
+</section>
+
+<!-- 15 -->
+<section class="slide">
+  <h1>Sınırlılıklar ve gelecek çalışma</h1>
+  <div class="cols">
+    <div>
+      <h2>Sınırlılıklarımız</h2>
+      <ul>
+        <li>Kendi simülatörümüz: mutlak sayılar makaleyle doğrudan kıyaslanamaz</li>
+        <li>Kural tabanı ve gözlem eşlemesi bizim tasarımımız</li>
+        <li>Tek iş akışı (MONTAGE), dengeli QoS</li>
+        <li>Basit gürültü: bağımsız Gauss, EFT tahminleri gürültüsüz</li>
+        <li>IT2'nin etkisi küçük; QoS kazancı yok</li>
+      </ul>
+    </div>
+    <div>
+      <h2>Gelecek çalışma</h2>
+      <ul>
+        <li>Kural tabanı / MF optimizasyonu: GA, PSO, ANFIS</li>
+        <li>Ölçülen gürültüye göre uyarlanan FOU</li>
+        <li>Zamansal ilişkili ve yanlı gürültü</li>
+        <li>CyberShake, LIGO, Epigenomics iş akışları</li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer"><span>Sınırlılıklar ve geliştirmeler</span><span>15</span></div>
+</section>
+
+<!-- 16 -->
+<section class="slide">
+  <h1>Canlı demo</h1>
+  <div class="cols">
+    <div>
+      <p style="font-family:Consolas,monospace; font-size:10.5pt; line-height:1.6; background:#f6f8fa; padding:3mm; border-radius:2mm">
+      python -m demo.demo<br><br>
+      python -m demo.demo decision 35 180 5 17 45<br>
+      python -m demo.demo qos 1 0 0<br>
+      python -m demo.demo simulate 100 101<br>
+      python -m demo.demo noise 0.1<br>
+      python -m pytest tests/test_it2.py -q</p>
+    </div>
+    <div>
+      <ul>
+        <li><b>Tek karar:</b> bulanıklaştırma → ateşlenen kurallar → COG, Sugeno ve IT2 aralığı</li>
+        <li>Örnek sınır durumu: Mamdani 131 Fog, Sugeno 153 Cloud, IT2 [110.9, 144.9] eşiği kesiyor → <b>belirsiz karar görünür</b></li>
+        <li><b>Simülasyon:</b> klasik / önerilen / Sugeno / IT2 / kontrolsüz</li>
+        <li><b>Gürültü:</b> T1 ve IT2 flip oranları</li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer"><span>Canlı demo</span><span>16</span></div>
+</section>
+
+<!-- 17 -->
+<section class="slide">
+  <h1>Özet</h1>
+  <div class="cols3" style="margin-top:4mm">
+    <div class="box"><div class="big">+4 / +22 %</div><p>makespan / maliyet kazancı yeniden üretildi; enerji (−4 %) üretilemedi, nedeni ölçüldü</p></div>
+    <div class="box"><div class="big">8.0→6.6 %</div><p>IT2, düşük gürültüde karar değişimlerini anlamlı azaltıyor; QoS aynı</p></div>
+    <div class="box red"><div class="big red">+50 %</div><p>deadline kontrolü olmadan makespan: asıl taşıyıcı kesin kontrol</p></div>
+  </div>
+  <ul style="margin-top:6mm">
+    <li>Açık kaynak, 113 test, tüm sonuçlar tek komutla yeniden üretilebilir</li>
+    <li>Makalenin iki iç tutarsızlığı sayısal olarak gösterildi</li>
+  </ul>
+  <p class="key" style="margin-top:6mm; color:var(--accent)">Teşekkürler — sorular?</p>
+  <div class="footer"><span>github.com/pinarlizeynep/bulanikMantik</span><span>17</span></div>
+</section>
+
+</body>
+</html>

@@ -77,9 +77,9 @@ FogWorkflowSim Java tabanlı ve makalenin tam kurulumu paylaşılmadığı için
 | 3 | 9 Kas (Pzt) | Ortam modeli, workflow üretici, MIN-MIN, baseline politika | CP3 | `Fix review findings in fuzzy engine and pin dependencies`, `Add fog/cloud/edge environment model, MONTAGE workflow and MIN-MIN scheduler`, `Add baseline two-way offloading` ✅ |
 | 4 | 10 Kas (Sal) | Önerilen bulanık politika, Şekil 4 + Tablo 4 yeniden üretimi | CP3 | `Count idle power only for used nodes and expose layer load`, `Add fuzzy offloading policy with QoS algorithm selection`, `Reproduce Fig.4 and Table 4` ✅ |
 | 5 | 11 Kas (Çar) | Özgün katkı: Type-2 FIS + gürültü deneyleri; 2.–5. gün kod incelemesi | CP4–5 | `Add interval type-2 FIS with Karnik-Mendel type reduction`, `Add IT2 offloading policy and input noise model`, `Add robustness experiments`, `Document paper deviations found in code review` ✅ |
-| 6 | 12 Kas (Per) | Ablation (Sugeno/durulaştırma), tablolar/grafikler, literatür taraması | CP5 | `Add ablation study`, `Add result tables and figures` |
-| 7 | 13 Kas (Cum) | Teknik rapor (8–12 sayfa, IEEE), README | — | `Add technical report draft`, `Write README` |
-| 8 | 14 Kas (Cmt) | Sunum (15–20 dk), canlı demo | FINAL | `Add presentation` |
+| 6 | 12 Kas (Per) → 14 Kas | Ablation (Sugeno/durulaştırma), tablolar/grafikler, literatür taraması | CP5 | `Add zero-order Sugeno FIS`, `Add ablation study`, `Add literature references and update README` ✅ |
+| 7 | 13 Kas (Cum) → 14 Kas | Teknik rapor (8–12 sayfa, IEEE), README | — | `Add technical report`, `Complete README` ✅ |
+| 8 | 14 Kas (Cmt) | Sunum (15–20 dk), canlı demo | FINAL | `Add presentation and live demo` ✅ |
 | — | 15 Kas (Paz) | Son kontroller, PDF'ler, temiz klondan tekrar üretilebilirlik testi | — | `Final report and cleanup` |
 | — | 16 Kas | Classroom'a yükleme (resmi teslim) | — | — |
 
