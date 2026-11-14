@@ -40,6 +40,8 @@ Extension (Day 5): ``IT2OffloadingPolicy`` is the same policy with the interval 
 ``src.fuzzy.it2``; ``noise`` (an ``InputNoise``) perturbs the observed FIS inputs to emulate
 measurement errors.  With noise the clean decision is also computed and logged, so that decision
 flips can be counted at the identical simulator state.
+Ablation (Day 6): ``SugenoOffloadingPolicy`` swaps in a zero-order Sugeno FIS; ``defuzz`` selects the
+Mamdani defuzzification method (centroid = paper, bisector, mom, som, lom).
 """
 from __future__ import annotations
 
@@ -47,7 +49,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from src.fuzzy.paper_fis import INPUTS, build_fis, build_it2_fis, crisp_to_layer
+from src.fuzzy.paper_fis import INPUTS, build_fis, build_it2_fis, build_sugeno_fis, crisp_to_layer
 from src.fuzzy.qos_selector import ALGORITHM_LAYER, select_algorithm
 
 BALANCED = (1 / 3, 1 / 3, 1 / 3)  # (time, energy, cost) preference
@@ -230,3 +232,16 @@ class IT2OffloadingPolicy(FuzzyOffloadingPolicy):
         if self.defuzz != "centroid":
             raise ValueError("IT2OffloadingPolicy type-reduces with the KM centroid; defuzz must be 'centroid'")
         return build_it2_fis(self.fou, self.output_fou)
+
+
+@dataclass
+class SugenoOffloadingPolicy(FuzzyOffloadingPolicy):
+    """Ablation: the proposed policy with a zero-order Sugeno FIS (``src.fuzzy.sugeno``) in place of
+    Mamdani + COG.  Everything else is inherited unchanged, as in ``IT2OffloadingPolicy``."""
+
+    name: str = "Proposed Sugeno fuzzy (ablation)"
+
+    def make_fis(self):
+        if self.defuzz != "centroid":
+            raise ValueError("a Sugeno system has no defuzzification step; leave defuzz at its default")
+        return build_sugeno_fis()

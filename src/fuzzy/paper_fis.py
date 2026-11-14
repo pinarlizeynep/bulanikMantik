@@ -15,6 +15,7 @@ import itertools
 from .it2 import IT2MamdaniFIS
 from .mamdani import MamdaniFIS, Rule
 from .membership import LinguisticVariable, trap, tri
+from .sugeno import SugenoFIS
 
 # ---------------------------------------------------------------- linguistic variables (Fig. 3)
 JOB_LIST = LinguisticVariable("jl", 0, 40, {
@@ -91,6 +92,12 @@ def build_it2_fis(fou: float = 0.05, output_fou: float = 0.0, type_reduction: st
     return IT2MamdaniFIS(build_fis("centroid", resolution), fou, output_fou, type_reduction)
 
 
+def build_sugeno_fis() -> SugenoFIS:
+    """Zero-order Sugeno version of the paper's FIS (ablation, see ``sugeno.py``): same MFs and
+    243 rule antecedents, constant consequents Edge = 40, Fog = 100, Cloud = 160."""
+    return SugenoFIS(build_fis("centroid"))
+
+
 def crisp_to_layer(c: float) -> str:
     if c != c:  # NaN: no rule fired, there is no decision to map
         raise ValueError("no rule fired (crisp output is NaN)")
@@ -125,9 +132,13 @@ def main() -> None:
     p.add_argument("--defuzz", default="centroid", choices=["centroid", "bisector", "mom", "som", "lom"])
     p.add_argument("--fou", type=float, default=None,
                    help="also show the interval type-2 decision with this FOU half-width (fraction of each universe)")
+    p.add_argument("--sugeno", action="store_true", help="also show the zero-order Sugeno decision")
     a = p.parse_args()
     values = {"jl": a.jl, "vt": a.vt, "nl": a.nl, "bw": a.bw, "dl": a.dl}
     print(explain(build_fis(a.defuzz), values))
+    if a.sugeno:
+        y = build_sugeno_fis().compute(values)
+        print(f"Zero-order Sugeno (weighted average of 40 / 100 / 160) = {y:.2f}  ->  offload to {crisp_to_layer(y)}")
     if a.fou is not None:
         res = build_it2_fis(a.fou).infer(values)
         yl, yr = res.interval
