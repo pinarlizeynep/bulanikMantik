@@ -22,7 +22,7 @@ When a task becomes ready the policy
 MIN-MIN then picks the node inside the chosen layer.
 
 Observation -> FIS input mapping (the paper only names the inputs; the mapping is ours and is
-documented in docs/gunluk/gun4):
+documented in the technical report, Table V):
   jl  job list size       number of tasks waiting in the ready list, clipped to [0, 40]
   vt  VM utilization      load of the local tier (edge + fog): queued + waiting work relative to
                           ``vt_ref_s`` seconds, in percent, clipped to [0, 200]

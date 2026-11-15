@@ -24,3 +24,6 @@ references/*.pdf
 # Secrets
 .env
 *.key
+
+# Private working notes (kept locally, not published)
+docs/

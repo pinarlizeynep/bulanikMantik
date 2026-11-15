@@ -1,7 +1,7 @@
 """Reproduce the paper's Fig. 4: proposed fuzzy offloading vs. the classical two-way hybrid.
 
 Same setting as the paper (MONTAGE, MIN-MIN, 20-300 jobs) with 10 independent seeds (100-109;
-seeds 0-2 were used only to scale the FIS inputs, see docs/gunluk/gun4).  The paper reports
+seeds 0-2 were used only to scale the FIS inputs, see the technical report, Sec. V-B).  The paper reports
 single curves without repetitions; we report mean +- std and a paired comparison.
 
 Outputs

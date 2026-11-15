@@ -8,7 +8,7 @@ Node parameters are taken from the paper's Table 3 (FogWorkflowSim settings):
     Edge   1000   800    1000      700       30        0            0
 
 The paper does not state units or how prices are charged, so this model fixes them explicitly
-(documented in docs/gunluk/gun3 and the report):
+(documented in the technical report, Sec. V-C):
   * bandwidth in Mbit/s, data sizes in MB  -> transfer time = 8 * MB / Mbps  [s]
   * task price is charged per second of execution, communication price per MB received
   * one-way network latency per layer (not in Table 3): edge 2 ms, fog 10 ms, cloud 30 ms;

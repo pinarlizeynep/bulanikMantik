@@ -6,7 +6,7 @@ width, clipped to the universe.  Two scenarios:
   all       jl, vt, nl, bw, dl
 Policies: the paper's type-1 FIS ("T1") and the IT2 FIS with FOU half-widths 0.025 ... 0.2.  The main
 IT2 configuration (``MAIN_FOU`` = 0.05) was fixed beforehand on the tuning seeds 0-2: it is the largest
-FOU whose noise-free makespan / energy / cost stay within about 1 % of the type-1 system (docs/gunluk/gun5).
+FOU whose noise-free makespan / energy / cost stay within about 1 % of the type-1 system (technical report, Sec. VII).
 The classical two-way baseline does not read the FIS inputs and is run once per workflow as reference.
 
 Decision stability is measured *at the identical simulator state*: at every hybrid (A5) decision the

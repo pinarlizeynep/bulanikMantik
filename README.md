@@ -36,7 +36,6 @@ experiments/    baseline/ and proposed/ experiment scripts
 results/        figures/ and tables/
 demo/           live demo
 tests/          unit tests
-docs/           project plan and paper analysis (Turkish)
 report/         technical report (PDF)
 presentation/   slides (PDF)
 references/     bibliography
@@ -167,7 +166,7 @@ preference, paired runs on identical workflows; positive = proposed is better):
 ![Fig. 4 reproduction](results/figures/fig4_reproduction.png)
 
 The makespan and cost gains are reproduced in direction; the energy gain is **not** (details and
-the reason in [`docs/gunluk/gun4_2026-11-10.md`](docs/gunluk/gun4_2026-11-10.md)).
+the reason in the technical report, Sec. VIII-A: [`report/report.pdf`](report/report.pdf)).
 
 **QoS preferences (Table 4 reproduction).** With the published layer mapping (cost→cloud, energy→fog,
 time→edge) the trends of the paper's Table 4 are not reproduced: edge-only execution is the *cheapest
@@ -237,7 +236,7 @@ runs ([`robustness_summary.csv`](results/tables/robustness_summary.csv),
 ![Robustness: decision stability](results/figures/robustness_stability.png)
 ![Robustness: QoS metrics](results/figures/robustness_metrics.png)
 
-Details, statistics and limitations (in Turkish): [`docs/gunluk/gun5_2026-11-11.md`](docs/gunluk/gun5_2026-11-11.md).
+Details, statistics and limitations (in Turkish): technical report, Sec. VI and VIII ([`report/report.pdf`](report/report.pdf)).
 
 ### Ablation study
 One component of the proposed policy is changed at a time (balanced QoS, MONTAGE 20-300 jobs, seeds
@@ -290,7 +289,7 @@ python -m src.fuzzy.paper_fis --jl 10 --vt 50 --nl 25 --bw 3 --dl 8 --sugeno
   mapping from simulator state to FIS inputs, and the λ thresholds of Alg. 5.
 - **Reproduction gap:** we reproduce the makespan gain (+4.0 % vs. 7.5 % in the paper) but not the energy
   (−4.2 % vs. +4.6 %) and the cost (+21.9 % vs. +13.6 %) numbers exactly, and the published QoS-to-layer
-  mapping of Table 2 contradicts the paper's own Table 3 (see `docs/makale_analizi.md`).
+  mapping of Table 2 contradicts the paper's own Table 3 (see the technical report, Sec. VIII-B).
 - **One workflow type** (MONTAGE), one environment (Table 3), balanced QoS for the extension experiments.
 - **Noise model:** independent Gaussian noise on the FIS inputs only; the deadline check uses exact
   estimates, which makes the system-level robustness optimistic.
