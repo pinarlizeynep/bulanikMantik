@@ -10,7 +10,7 @@ Reference list in IEEE format. Paper PDFs are not redistributed in this reposito
 [2] C. Sonmez, A. Ozgovde, and C. Ersoy, "Fuzzy workload orchestration for edge computing,"
 *IEEE Trans. Netw. Serv. Manag.*, vol. 16, no. 2, pp. 769–782, 2019.
 
-[3] S. Khan, M. Abdullah, W. Iqbal, and M. Butt, "Efficient job placement using two-way offloading
+[3] S. A. Khan, M. Abdullah, W. Iqbal, and M. A. Butt, "Efficient job placement using two-way offloading
 technique over fog-cloud architectures," *Cluster Computing*, vol. 26, pp. 3503–3521, 2023.
 
 [4] X. Liu, L. Fan, J. Xu, et al., "FogWorkflowSim: An automated simulation toolkit for workflow
